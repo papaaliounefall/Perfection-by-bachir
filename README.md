@@ -86,4 +86,4 @@ En attendant les écrans de l'espace pro, l'administrateur gère factures, galer
 Reste aussi : routage par URL (React Router) pour le SEO, stockage objet des médias (S3/R2), déploiement
 (Docker, Nginx, Gunicorn).
 
-Documentation fonctionnelle : [docs/guide-fonctionnement.docx](docs/guide-fonctionnement.docx)
+Documentation fonctionnelle (rôles, parcours, modules) : [Word](docs/guide-fonctionnement.docx) · [PDF](docs/guide-fonctionnement.pdf)
