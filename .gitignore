@@ -1,0 +1,21 @@
+# Frontend
+node_modules/
+dist/
+coverage/
+
+# Backend
+.venv/
+__pycache__/
+*.pyc
+db.sqlite3
+staticfiles/
+media/
+
+# Secrets : seuls les exemples et la config du mode démo (sans secret) sont versionnés
+.env*
+!.env.example
+!.env.mock
+
+# Divers
+.DS_Store
+*.log

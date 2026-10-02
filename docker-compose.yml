@@ -1,0 +1,16 @@
+# Base PostgreSQL de développement : docker compose up -d
+# puis renseigner POSTGRES_* dans backend/.env (voir backend/.env.example).
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: perfection
+      POSTGRES_USER: perfection
+      POSTGRES_PASSWORD: perfection
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

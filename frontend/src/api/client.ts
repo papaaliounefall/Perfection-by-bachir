@@ -1,0 +1,117 @@
+import {
+  AppNotification,
+  Appointment,
+  AppointmentAction,
+  AppointmentFilters,
+  AvailableDay,
+  BookingInput,
+  ContactInput,
+  CurrentUser,
+  Invoice,
+  Customer,
+  CustomerProfile,
+  DashboardSummary,
+  Employee,
+  EmployeeStatus,
+  Highlight,
+  OpeningHoursEntry,
+  PortfolioProject,
+  ServiceInput,
+  ServiceItem,
+  Testimonial,
+  TimeSlot,
+  Vehicle,
+  VehicleInput,
+} from '../types';
+
+/**
+ * Contrat unique d'accès aux données. Deux implémentations :
+ *  - api/http : l'API Django réelle (/api/v1/)
+ *  - mocks/   : simulation en mémoire pour la démo (VITE_USE_MOCKS=true)
+ * Les composants ne connaissent que cette interface.
+ */
+export interface ApiClient {
+  auth: {
+    me(): Promise<CurrentUser | null>;
+    login(email: string, password: string): Promise<CurrentUser>;
+    logout(): Promise<void>;
+    register(input: { fullName: string; email: string; phone: string; password: string }): Promise<CurrentUser>;
+    /** Toujours « OK » : ne révèle pas si l'email est inscrit. */
+    requestPasswordReset(email: string): Promise<void>;
+    confirmPasswordReset(uid: string, token: string, newPassword: string): Promise<void>;
+  };
+  invoices: {
+    list(): Promise<Invoice[]>;
+  };
+  services: {
+    list(): Promise<ServiceItem[]>;
+    create(input: ServiceInput): Promise<ServiceItem>;
+    update(id: number, patch: Partial<ServiceInput>): Promise<ServiceItem>;
+  };
+  customers: {
+    list(query?: string): Promise<Customer[]>;
+    create(input: { name: string; email: string; phone: string; address?: string }): Promise<Customer>;
+    update(id: number, patch: Partial<Pick<Customer, 'name' | 'email' | 'phone' | 'address' | 'segment' | 'internalNotes'>>): Promise<Customer>;
+    me(): Promise<CustomerProfile>;
+    updateMe(patch: Partial<Pick<CustomerProfile, 'name' | 'phone' | 'address'>>): Promise<CustomerProfile>;
+  };
+  vehicles: {
+    list(): Promise<Vehicle[]>;
+    create(input: VehicleInput): Promise<Vehicle>;
+    /** Photo privée : JPEG/PNG/WebP, 5 Mo max, redimensionnée par le serveur. */
+    uploadPhoto(id: number, file: File): Promise<Vehicle>;
+    removePhoto(id: number): Promise<Vehicle>;
+  };
+  notifications: {
+    list(): Promise<AppNotification[]>;
+    unreadCount(): Promise<number>;
+    markRead(id: number): Promise<void>;
+    markAllRead(): Promise<void>;
+  };
+  employees: {
+    list(): Promise<Employee[]>;
+    setStatus(id: number, status: EmployeeStatus): Promise<Employee>;
+  };
+  appointments: {
+    list(filters?: AppointmentFilters): Promise<Appointment[]>;
+    transition(id: number, action: AppointmentAction, note?: string): Promise<Appointment>;
+    reschedule(id: number, date: string, time: string, note?: string): Promise<Appointment>;
+    assign(id: number, employeeId: number | null): Promise<Appointment>;
+    updateNotes(id: number, internalNotes: string): Promise<Appointment>;
+  };
+  bookings: {
+    create(input: BookingInput): Promise<Appointment>;
+  };
+  availability: {
+    days(serviceId: number, from?: string, days?: number): Promise<AvailableDay[]>;
+    slots(serviceId: number, date: string): Promise<TimeSlot[]>;
+    openingHours(): Promise<OpeningHoursEntry[]>;
+  };
+  dashboard: {
+    summary(): Promise<DashboardSummary>;
+  };
+  contact: {
+    send(input: ContactInput): Promise<void>;
+  };
+  /** Contenu éditorial publié par l'atelier (galerie, avis, chiffres clés).
+   *  Seuls les contenus validés et publiés sont renvoyés. */
+  content: {
+    portfolio(): Promise<PortfolioProject[]>;
+    testimonials(): Promise<Testimonial[]>;
+    highlights(): Promise<Highlight[]>;
+  };
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly fieldErrors: Record<string, string[]> = {}
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export const errorMessage = (err: unknown) =>
+  err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Erreur inattendue.';

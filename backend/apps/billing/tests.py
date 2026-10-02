@@ -1,0 +1,72 @@
+from rest_framework.test import APIClient
+
+from apps.appointments.models import Appointment
+from apps.appointments.tests import BaseCase
+from apps.core.models import AuditLog
+from apps.notifications.models import Notification
+
+
+class BillingTests(BaseCase):
+    def setUp(self):
+        super().setUp()
+        self.appointment_id = self.book(api=self.as_client(), vehicle=self.vehicle.id).data["id"]
+        Appointment.objects.filter(pk=self.appointment_id).update(status=Appointment.Status.DONE)
+        self.manager_api = self.as_manager()
+
+    def invoice(self, **extra):
+        return self.manager_api.post("/api/v1/invoices/", {"appointment": self.appointment_id, **extra}, format="json")
+
+    def test_invoice_from_completed_appointment_with_sequential_number(self):
+        response = self.invoice(discount=5000)
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertRegex(response.data["number"], r"^INV-\d{4}-0001$")
+        self.assertEqual(response.data["subtotal"], 40000)
+        self.assertEqual(response.data["total"], 35000)
+        self.assertEqual(response.data["status"], "pending")
+        self.assertTrue(Notification.objects.filter(recipient=self.client_user, title="Facture disponible").exists())
+        # Une seule facture active par rendez-vous
+        self.assertEqual(self.invoice().status_code, 409)
+
+    def test_invoice_requires_finished_service(self):
+        Appointment.objects.filter(pk=self.appointment_id).update(status=Appointment.Status.CONFIRMED)
+        self.assertEqual(self.invoice().status_code, 409)
+
+    def test_payments_keep_invoice_consistent(self):
+        invoice = self.invoice().data
+        url = f"/api/v1/invoices/{invoice['id']}/payments/"
+        partial = self.manager_api.post(url, {"amount": 15000, "method": "wave", "reference": "W-1"}, format="json")
+        self.assertEqual(partial.data["status"], "partial")
+        self.assertEqual(partial.data["balance"], 25000)
+        too_much = self.manager_api.post(url, {"amount": 30000, "method": "cash"}, format="json")
+        self.assertEqual(too_much.status_code, 400)
+        paid = self.manager_api.post(url, {"amount": 25000, "method": "orange_money"}, format="json")
+        self.assertEqual(paid.data["status"], "paid")
+        self.assertEqual(paid.data["balance"], 0)
+        self.assertTrue(AuditLog.objects.filter(action="payment.create").count() == 2)
+
+        # Annulation impossible tant qu'il reste des paiements ; remboursement d'abord
+        cancel_url = f"/api/v1/invoices/{invoice['id']}/cancel/"
+        self.assertEqual(self.manager_api.post(cancel_url, {"reason": "Erreur"}, format="json").status_code, 409)
+        for payment in paid.data["payments"]:
+            self.manager_api.post(f"/api/v1/payments/{payment['id']}/refund/", {"reason": "Geste commercial"}, format="json")
+        refunded = self.manager_api.get(f"/api/v1/invoices/{invoice['id']}/").data
+        self.assertEqual(refunded["status"], "refunded")
+        self.assertEqual(self.manager_api.post(cancel_url, {"reason": "Erreur"}, format="json").data["status"], "cancelled")
+
+    def test_client_sees_own_invoice_and_pdf_only(self):
+        invoice = self.invoice().data
+        client = self.as_client()
+        self.assertEqual(client.get("/api/v1/invoices/").data["count"], 1)
+        pdf = client.get(f"/api/v1/invoices/{invoice['id']}/pdf/")
+        self.assertEqual(pdf.status_code, 200)
+        self.assertEqual(pdf["Content-Type"], "application/pdf")
+        self.assertTrue(pdf.content.startswith(b"%PDF"))
+        # Le client ne peut pas encaisser
+        self.assertEqual(client.post(f"/api/v1/invoices/{invoice['id']}/payments/", {"amount": 1, "method": "cash"}, format="json").status_code, 403)
+
+        other = APIClient()
+        other.force_authenticate(self.other.user)
+        self.assertEqual(other.get(f"/api/v1/invoices/{invoice['id']}/pdf/").status_code, 404)
+        tech = APIClient()
+        tech.force_authenticate(self.tech_user)
+        self.assertEqual(tech.get("/api/v1/invoices/").status_code, 403)
