@@ -74,7 +74,7 @@ def apply_transition(appointment_id, action, user, note="") -> Appointment:
 
     with transaction.atomic():
         appointment = (
-            Appointment.objects.select_for_update()
+            Appointment.objects.select_for_update(of=("self",))
             .select_related("customer", "assigned_employee")
             .get(pk=appointment_id)
         )
@@ -120,7 +120,7 @@ def reschedule(appointment_id, new_start, user, note="") -> Appointment:
     with transaction.atomic():
         sequences.lock(BOOKING_LOCK)
         appointment = (
-            Appointment.objects.select_for_update().select_related("service").get(pk=appointment_id)
+            Appointment.objects.select_for_update(of=("self",)).select_related("service").get(pk=appointment_id)
         )
         if appointment.status not in reschedulable:
             raise Conflict("Ce rendez-vous ne peut plus être reporté.")

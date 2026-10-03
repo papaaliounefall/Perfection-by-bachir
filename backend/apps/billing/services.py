@@ -106,7 +106,7 @@ def record_payment(*, invoice_id, amount, method, reference, user) -> Payment:
 
 def refund_payment(*, payment_id, reason, user) -> Payment:
     with transaction.atomic():
-        payment = Payment.objects.select_for_update().select_related("invoice").get(pk=payment_id)
+        payment = Payment.objects.select_for_update(of=("self",)).select_related("invoice").get(pk=payment_id)
         if payment.refunded_at:
             raise Conflict("Ce paiement est déjà remboursé.")
         payment.refunded_at = timezone.now()

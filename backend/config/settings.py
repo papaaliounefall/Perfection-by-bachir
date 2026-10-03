@@ -154,6 +154,17 @@ BUSINESS = {
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Erreurs serveur écrites dans la sortie standard (visibles via `docker compose logs`)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "apps": {"handlers": ["console"], "level": "INFO"},
+    },
+}
+
 # --- Sécurité des cookies (authentification par session HttpOnly) ---
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

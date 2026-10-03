@@ -85,9 +85,12 @@ npm run dev:mock   # mode démo : données simulées en mémoire, aucun backend 
 ## Tests
 
 ```bash
-cd backend && python manage.py test apps
+docker compose exec backend python manage.py test apps   # sur PostgreSQL, comme en production
 cd frontend && npm run lint && npm run build
 ```
+
+Lancer les tests backend sur PostgreSQL (et pas seulement SQLite) : certains comportements, comme les
+verrous de ligne, n'existent que sur PostgreSQL.
 
 ## Avancement (phases du cahier des charges)
 
