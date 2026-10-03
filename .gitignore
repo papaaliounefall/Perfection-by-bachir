@@ -15,6 +15,7 @@ media/
 .env*
 !.env.example
 !.env.mock
+!.env.docker.example
 
 # Divers
 .DS_Store

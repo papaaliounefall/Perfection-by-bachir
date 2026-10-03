@@ -1,16 +1,68 @@
-# Base PostgreSQL de développement : docker compose up -d
-# puis renseigner POSTGRES_* dans backend/.env (voir backend/.env.example).
+# Plateforme complète sur Docker Desktop :
+#   docker compose up -d --build      puis ouvrir http://localhost:8080
+# Données de démonstration (facultatif) :
+#   docker compose exec backend python manage.py seed_demo --password "Demo-Perfection-2026" --force
+# Variables personnalisables dans un fichier .env à la racine (voir .env.docker.example).
+
 services:
   db:
     image: postgres:17
+    restart: unless-stopped
     environment:
       POSTGRES_DB: perfection
       POSTGRES_USER: perfection
-      POSTGRES_PASSWORD: perfection
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-perfection}
     ports:
-      - "5432:5432"
+      - "5432:5432" # accès depuis un Django lancé hors Docker (développement)
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U perfection -d perfection"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_DEBUG: "false"
+      # Valeur par défaut réservée à l'usage LOCAL : définir une vraie clé dans .env pour un serveur
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-docker-insecure-key-change-me-before-any-deployment}
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8080
+      DJANGO_SECURE_COOKIES: "false"
+      FRONTEND_URL: http://localhost:8080
+      POSTGRES_DB: perfection
+      POSTGRES_USER: perfection
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-perfection}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      WORKSHOP_CAPACITY: ${WORKSHOP_CAPACITY:-2}
+      BUSINESS_NAME: ${BUSINESS_NAME:-Perfection By Bachir Ndour}
+      BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-Dakar, Sénégal}
+      BUSINESS_PHONE: ${BUSINESS_PHONE:-}
+      BUSINESS_EMAIL: ${BUSINESS_EMAIL:-}
+      BUSINESS_NINEA: ${BUSINESS_NINEA:-}
+    volumes:
+      - media:/app/media
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_BUSINESS_PHONE: ${BUSINESS_PHONE:-}
+        VITE_BUSINESS_WHATSAPP: ${BUSINESS_WHATSAPP:-}
+        VITE_BUSINESS_ADDRESS: ${BUSINESS_ADDRESS_PUBLIC:-}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
 
 volumes:
   pgdata:
+  media:

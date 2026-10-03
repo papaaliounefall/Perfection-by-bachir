@@ -30,6 +30,23 @@ docs/       cahier des charges
 
 ## Démarrage
 
+### Avec Docker Desktop (recommandé)
+
+```bash
+docker compose up -d --build
+# Facultatif : données de démonstration (comptes *@demo.perfection.local)
+docker compose exec backend python manage.py seed_demo --password "Demo-Perfection-2026" --force
+```
+
+Puis ouvrir **http://localhost:8080** (site, espaces connectés et `/admin/`). PostgreSQL, Django (Gunicorn) et
+Nginx tournent dans trois conteneurs ; base et photos sont conservées dans des volumes Docker.
+Arrêter : `docker compose down` (les données restent) · Mettre à jour après un changement : `docker compose up -d --build`.
+Personnaliser (clé secrète, identité de facturation…) : copier `.env.docker.example` vers `.env`.
+
+> La clé secrète par défaut ne convient qu'à un usage local : en définir une vraie avant toute mise en ligne.
+
+### Sans Docker (développement)
+
 **Backend** (Python 3.12+)
 
 ```bash
