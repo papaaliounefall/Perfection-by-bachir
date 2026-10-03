@@ -9,6 +9,8 @@ import { STATUS_LABELS } from '../lib/labels';
 import {
   AppNotification,
   Appointment,
+  AppointmentPhoto,
+  WorkshopStep,
   AppointmentAction,
   AppointmentStatus,
   CurrentUser,
@@ -100,7 +102,11 @@ interface Row {
   internalNotes: string;
   employeeId: number | null;
   history: Appointment['history'];
+  steps?: WorkshopStep[];
 }
+
+const photos = new Map<number, AppointmentPhoto[]>();
+const PHOTO_LABELS = { inspection: 'Inspection à la réception', before: 'Avant', after: 'Après' } as const;
 
 const CATEGORY: Record<string, ServiceCategory> = {
   Detailing: 'detailing',
@@ -264,7 +270,8 @@ function toAppointment(r: Row): Appointment {
     reference: r.reference,
     status: r.status,
     statusLabel: STATUS_LABELS[r.status],
-    progress: MAIN_FLOW.includes(r.status) ? Math.round((MAIN_FLOW.indexOf(r.status) * 100) / (MAIN_FLOW.length - 1)) : null,
+    progress: progressOf(r),
+    steps: r.steps ?? [],
     allowedActions: (Object.keys(TRANSITIONS) as AppointmentAction[]).filter(
       (a) => TRANSITIONS[a].from.includes(r.status) && roleAllows(r, a)
     ),
@@ -284,8 +291,17 @@ function toAppointment(r: Row): Appointment {
     customerNotes: r.customerNotes,
     assignedEmployeeId: r.employeeId,
     assignedEmployeeName: employee?.name ?? null,
-    ...(staff ? { internalNotes: r.internalNotes, history: r.history } : {}),
+    ...(staff ? { internalNotes: r.internalNotes, history: r.history, invoice: null } : {}),
   };
+}
+
+// Miroir de backend/apps/workshop/services.py : avancement par étapes validées
+function progressOf(r: Row) {
+  if (!MAIN_FLOW.includes(r.status)) return null;
+  const span = 100 / (MAIN_FLOW.length - 1);
+  let value = MAIN_FLOW.indexOf(r.status) * span;
+  if (r.status === 'in_progress' && r.steps?.length) value += (span * r.steps.filter((s) => s.done).length) / r.steps.length;
+  return Math.round(value);
 }
 
 function log(r: Row, action: string, from: string, note = '') {
@@ -493,8 +509,45 @@ export const mockApi: ApiClient = {
     },
   },
 
+  // La facturation n'est pas simulée : elle se montre avec le vrai serveur
   invoices: {
     list: () => delay([]),
+    recordPayment: () => fail('Encaissement indisponible en mode démo.', 400),
+  },
+
+  payments: {
+    cashReport: (date) => delay({ date, total: 0, cashTotal: 0, byMethod: [], byPerson: [], payments: [] }),
+    refund: () => fail('Remboursement indisponible en mode démo.', 400),
+  },
+
+  workshop: {
+    async setStep(appointmentId, stepId, done) {
+      const row = findRow(appointmentId);
+      if (row.status !== 'in_progress') fail('Les étapes se valident pendant le traitement (statut « En cours »).', 409);
+      const u = requireStaff();
+      if (!isManager(u) && row.employeeId !== u.employeeId)
+        fail('Seul le technicien affecté ou un manager peut valider les étapes.', 403);
+      const step = row.steps?.find((s) => s.id === stepId) ?? fail('Étape introuvable.', 404);
+      step.done = done;
+      step.doneAt = done ? new Date().toISOString() : null;
+      return delay(progressOf(row));
+    },
+    async photos(appointmentId) {
+      findRow(appointmentId);
+      return delay(photos.get(appointmentId) ?? []);
+    },
+    async uploadPhoto(appointmentId, file, kind, caption) {
+      findRow(appointmentId);
+      requireStaff();
+      const photo = { id: Date.now(), kind, kindLabel: PHOTO_LABELS[kind], caption, url: URL.createObjectURL(file), createdAt: new Date().toISOString() };
+      photos.set(appointmentId, [...(photos.get(appointmentId) ?? []), photo]);
+      return delay(photo);
+    },
+    async deletePhoto(appointmentId, photoId) {
+      requireStaff();
+      photos.set(appointmentId, (photos.get(appointmentId) ?? []).filter((p) => p.id !== photoId));
+      return delay(undefined);
+    },
   },
 
   notifications: {
@@ -552,8 +605,17 @@ export const mockApi: ApiClient = {
       const t = TRANSITIONS[action] ?? fail('Action inconnue.', 400);
       if (!t.from.includes(row.status)) fail(`Action impossible pour un rendez-vous « ${STATUS_LABELS[row.status]} ».`, 409);
       if (!roleAllows(row, action)) fail("Vous n'avez pas le droit d'effectuer cette action.", 403);
+      if (action === 'submit_quality_check' && row.steps?.some((s) => !s.done))
+        fail('Toutes les étapes de traitement doivent être validées avant le contrôle final.', 409);
       const from = row.status;
       row.status = t.to;
+      if (action === 'check_in' && !row.steps?.length) {
+        const service = services.find((s) => s.id === row.serviceId)!;
+        const titles = service.processSteps.map((p) => p.title).filter(Boolean);
+        row.steps = (titles.length ? titles : ['Diagnostic et préparation', 'Exécution du protocole', 'Finition et nettoyage']).map(
+          (title, i) => ({ id: row.id * 100 + i + 1, order: i + 1, title, done: false, doneAt: null })
+        );
+      }
       log(row, action, from, note);
       return delay(toAppointment(row));
     },

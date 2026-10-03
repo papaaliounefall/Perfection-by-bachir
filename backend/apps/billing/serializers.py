@@ -17,12 +17,14 @@ class PaymentSerializer(serializers.ModelSerializer):
     method_display = serializers.CharField(source="get_method_display", read_only=True)
     invoice_number = serializers.CharField(source="invoice.number", read_only=True)
     refunded = serializers.SerializerMethodField()
+    recorded_by = serializers.CharField(source="recorded_by.email", default=None)
+    customer_name = serializers.CharField(source="invoice.customer.full_name", read_only=True)
 
     class Meta:
         model = Payment
         fields = [
-            "id", "invoice", "invoice_number", "amount", "method", "method_display", "reference",
-            "received_at", "refunded", "refunded_at", "refund_reason",
+            "id", "invoice", "invoice_number", "customer_name", "amount", "method", "method_display", "reference",
+            "received_at", "recorded_by", "refunded", "refunded_at", "refund_reason",
         ]
         read_only_fields = fields
 

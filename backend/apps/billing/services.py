@@ -57,6 +57,23 @@ def create_invoice(*, appointment, user, lines=None, discount=0, notes="") -> In
     return invoice
 
 
+def active_invoice(appointment):
+    return appointment.invoices.filter(cancelled_at__isnull=True).first()
+
+
+def balance_due(appointment) -> int:
+    invoice = active_invoice(appointment)
+    return invoice.balance if invoice else 0
+
+
+def ensure_invoice(appointment, user):
+    """Crée la facture à la validation de la prestation si le prix est connu.
+    Prestation sur devis : le manager l'établit lui-même."""
+    if appointment.price_estimate is None or active_invoice(appointment):
+        return active_invoice(appointment)
+    return create_invoice(appointment=appointment, user=user)
+
+
 def record_payment(*, invoice_id, amount, method, reference, user) -> Payment:
     with transaction.atomic():
         invoice = Invoice.objects.select_for_update().get(pk=invoice_id)

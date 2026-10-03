@@ -36,6 +36,9 @@ function toApiError(status: number, body: unknown): ApiError {
     Object.entries(data).forEach(([k, v]) => walk(v, k));
     if (messages.length) return new ApiError(messages.join(' '), status, fields);
   }
+  // 403 sans réponse JSON : rejet par la protection CSRF de Django (page expirée ou adresse du site non déclarée)
+  if (status === 403 && body == null)
+    return new ApiError('Requête bloquée par la protection de sécurité. Rechargez la page puis réessayez.', status);
   if (status === 401 || status === 403) return new ApiError('Accès refusé. Veuillez vous connecter.', status);
   return new ApiError(`Erreur serveur (${status}).`, status);
 }

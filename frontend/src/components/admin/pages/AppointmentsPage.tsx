@@ -15,7 +15,9 @@ import {
 import { useApiData } from '../../../lib/useApiData';
 import { Appointment, AppointmentAction, AppointmentStatus, Employee, TimeSlot } from '../../../types';
 import { EmptyState, ErrorState, LoadingState, Modal, StatusIndicator } from '../../ui/DesignSystem';
+import { HandoverModal, PaymentForm } from './CounterPayment';
 import { darkInput, Field, PageHeader, panel, td, th } from './shared';
+import { WorkshopPanel } from './WorkshopPanel';
 
 const FILTERS: { label: string; statuses?: AppointmentStatus[] }[] = [
   { label: 'Tous' },
@@ -27,16 +29,19 @@ const FILTERS: { label: string; statuses?: AppointmentStatus[] }[] = [
 ];
 
 const RESCHEDULABLE: AppointmentStatus[] = ['pending', 'confirmed', 'rescheduled'];
+const WORKSHOP_STATUSES: AppointmentStatus[] = ['received', 'in_progress', 'quality_check', 'done', 'delivered'];
 
-const ActionButtons: React.FC<{ apt: Appointment; onDone: (updated: Appointment) => void; align?: 'start' | 'end' }> = ({
-  apt,
-  onDone,
-  align = 'end',
-}) => {
+const ActionButtons: React.FC<{
+  apt: Appointment;
+  onDone: (updated: Appointment) => void;
+  onHandover: (apt: Appointment) => void;
+  align?: 'start' | 'end';
+}> = ({ apt, onDone, onHandover, align = 'end' }) => {
   const { run } = useApp();
   const [busy, setBusy] = useState(false);
 
   const act = async (action: AppointmentAction) => {
+    if (action === 'deliver') return onHandover(apt); // reste à payer vérifié au comptoir
     if (DESTRUCTIVE_ACTIONS.includes(action) && !window.confirm(`${ACTION_LABELS[action]} le rendez-vous ${apt.reference} ?`)) return;
     setBusy(true);
     const updated = await run(() => api.appointments.transition(apt.id, action), `${apt.reference} : ${ACTION_LABELS[action]}`);
@@ -90,6 +95,12 @@ const ManageModal: React.FC<{
     if (updated) onUpdated(updated);
   };
 
+  const refresh = async () => {
+    const fresh = (await api.appointments.list({ customerId: apt.customerId })).find((a) => a.id === apt.id);
+    if (fresh) onUpdated(fresh);
+  };
+  const inWorkshop = WORKSHOP_STATUSES.includes(apt.status);
+
   return (
     <Modal isOpen onClose={onClose} title={`Rendez-vous ${apt.reference}`} subtitle={`${apt.vehicleName} — ${apt.serviceName}`}>
       <div className="space-y-6 text-xs">
@@ -113,6 +124,32 @@ const ManageModal: React.FC<{
             </p>
           )}
         </div>
+
+        {inWorkshop && (
+          <WorkshopPanel apt={apt} onProgress={(steps, progress) => onUpdated({ ...apt, steps, progress })} />
+        )}
+
+        {apt.invoice && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-neutral-300 font-semibold">Facture {apt.invoice.number}</p>
+              <span className="font-mono text-neutral-400">
+                {formatFcfa(apt.invoice.paidAmount)} / {formatFcfa(apt.invoice.total)}
+              </span>
+            </div>
+            {apt.invoice.balance > 0 ? (
+              <PaymentForm
+                key={apt.invoice.balance}
+                invoiceId={apt.invoice.id}
+                balance={apt.invoice.balance}
+                submitLabel={`Encaisser (reste ${formatFcfa(apt.invoice.balance)})`}
+                onPaid={refresh}
+              />
+            ) : (
+              <p className="text-emerald-400">Entièrement payée.</p>
+            )}
+          </section>
+        )}
 
         {isManager && (
           <form
@@ -231,6 +268,7 @@ export const AppointmentsPage: React.FC = () => {
   const [filter, setFilter] = useState(FILTERS[0]);
   const [date, setDate] = useState('');
   const [editing, setEditing] = useState<Appointment | null>(null);
+  const [handover, setHandover] = useState<Appointment | null>(null);
 
   const appointments = useApiData<Appointment[]>(
     () => api.appointments.list({ status: filter.statuses, date: date || undefined }),
@@ -327,7 +365,7 @@ export const AppointmentsPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <ActionButtons apt={apt} onDone={replace} align="start" />
+                  <ActionButtons apt={apt} onDone={replace} onHandover={setHandover} align="start" />
                   <button
                     type="button"
                     onClick={() => setEditing(apt)}
@@ -376,7 +414,7 @@ export const AppointmentsPage: React.FC = () => {
                       <StatusIndicator status={STATUS_LABELS[apt.status]} tone="light" />
                     </td>
                     <td className={`${td} text-right space-y-1.5`}>
-                      <ActionButtons apt={apt} onDone={replace} />
+                      <ActionButtons apt={apt} onDone={replace} onHandover={setHandover} />
                       <button
                         type="button"
                         onClick={() => setEditing(apt)}
@@ -393,6 +431,17 @@ export const AppointmentsPage: React.FC = () => {
           </>
         )}
       </div>
+
+      {handover && (
+        <HandoverModal
+          apt={handover}
+          onClose={() => setHandover(null)}
+          onDelivered={(updated) => {
+            replace(updated);
+            setHandover(null);
+          }}
+        />
+      )}
 
       {editing && (
         <ManageModal

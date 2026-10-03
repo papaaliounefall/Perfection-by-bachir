@@ -17,6 +17,15 @@ import { request, requestAll, upload } from './request';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Dto = Record<string, any>;
 
+const toPhoto = (p: Dto) => ({
+  id: p.id,
+  kind: p.kind,
+  kindLabel: p.kind_display,
+  caption: p.caption,
+  url: p.url,
+  createdAt: p.created_at,
+});
+
 const query = (params: Record<string, string | number | undefined>) => {
   const qs = new URLSearchParams(
     Object.entries(params).filter(([, v]) => v !== undefined && v !== '') as [string, string][]
@@ -138,6 +147,53 @@ export const httpApi: ApiClient = {
         })),
         pdfUrl: `/api/v1/invoices/${d.id}/pdf/`,
       })),
+    recordPayment: async (invoiceId, amount, method, reference) => {
+      await request('POST', `/invoices/${invoiceId}/payments/`, { amount, method, reference: reference ?? '' });
+    },
+  },
+
+  payments: {
+    cashReport: async (date) => {
+      const d = await request<Dto>('GET', `/payments/cash-report/?date=${date}`);
+      return {
+        date: d.date,
+        total: d.total,
+        cashTotal: d.cash_total,
+        byMethod: d.by_method,
+        byPerson: d.by_person,
+        payments: d.payments.map((p: Dto) => ({
+          id: p.id,
+          invoiceNumber: p.invoice_number,
+          customerName: p.customer_name,
+          amount: p.amount,
+          method: p.method_display,
+          reference: p.reference,
+          receivedAt: p.received_at,
+          recordedBy: p.recorded_by,
+          refunded: p.refunded,
+        })),
+      };
+    },
+    refund: async (paymentId, reason) => {
+      await request('POST', `/payments/${paymentId}/refund/`, { reason });
+    },
+  },
+
+  workshop: {
+    setStep: async (appointmentId, stepId, done) =>
+      (await request<Dto>('POST', `/appointments/${appointmentId}/steps/${stepId}/`, { done })).progress,
+    photos: async (appointmentId) =>
+      (await request<Dto[]>('GET', `/appointments/${appointmentId}/photos/`)).map(toPhoto),
+    uploadPhoto: async (appointmentId, file, kind, caption) => {
+      const form = new FormData();
+      form.append('photo', file);
+      form.append('kind', kind);
+      form.append('caption', caption);
+      return toPhoto(await upload<Dto>(`/appointments/${appointmentId}/photos/`, form));
+    },
+    deletePhoto: async (appointmentId, photoId) => {
+      await request('DELETE', `/appointments/${appointmentId}/photos/${photoId}/`);
+    },
   },
 
   notifications: {

@@ -41,7 +41,7 @@ class AppointmentViewSet(viewsets.ReadOnlyModelViewSet):
         qs = (
             visible_appointments(self.request.user)
             .select_related("service", "vehicle", "customer", "assigned_employee")
-            .prefetch_related("history__changed_by", "steps")
+            .prefetch_related("history__changed_by", "steps", "invoices__lines", "invoices__payments")
         )
 
         params = self.request.query_params

@@ -1,6 +1,10 @@
 import {
   AppNotification,
   Appointment,
+  AppointmentPhoto,
+  CashReport,
+  PaymentMethod,
+  PhotoKind,
   AppointmentAction,
   AppointmentFilters,
   AvailableDay,
@@ -42,6 +46,20 @@ export interface ApiClient {
   };
   invoices: {
     list(): Promise<Invoice[]>;
+    /** Encaissement (manager, ou technicien au comptoir). */
+    recordPayment(invoiceId: number, amount: number, method: PaymentMethod, reference?: string): Promise<void>;
+  };
+  payments: {
+    /** Journal de caisse d'une journée (manager). */
+    cashReport(date: string): Promise<CashReport>;
+    refund(paymentId: number, reason: string): Promise<void>;
+  };
+  workshop: {
+    /** Coche / décoche une étape ; renvoie l'avancement recalculé. */
+    setStep(appointmentId: number, stepId: number, done: boolean): Promise<number | null>;
+    photos(appointmentId: number): Promise<AppointmentPhoto[]>;
+    uploadPhoto(appointmentId: number, file: File, kind: PhotoKind, caption: string): Promise<AppointmentPhoto>;
+    deletePhoto(appointmentId: number, photoId: number): Promise<void>;
   };
   services: {
     list(): Promise<ServiceItem[]>;

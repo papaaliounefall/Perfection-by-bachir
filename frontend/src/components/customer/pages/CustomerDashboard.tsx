@@ -132,6 +132,15 @@ export const CustomerDashboard: React.FC<{ data: CustomerData }> = ({ data }) =>
                     {a.serviceName} — {a.vehicleName}
                   </h3>
                   <ProgressBar value={a.progress ?? 0} />
+                  {a.steps.length > 0 && (
+                    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                      {a.steps.map((s) => (
+                        <li key={s.id} className={s.done ? 'text-emerald-700' : 'text-neutral-500'}>
+                          {s.done ? '✓' : '○'} {s.title}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {a.status === 'done' ? (
                     <p className="text-sm font-semibold text-emerald-700">
                       Votre véhicule est prêt : vous pouvez venir le récupérer à l’atelier.

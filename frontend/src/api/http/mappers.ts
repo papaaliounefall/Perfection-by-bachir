@@ -140,6 +140,17 @@ export const toAppointment = (d: Dto): Appointment => ({
   assignedEmployeeId: d.assigned_employee ?? null,
   assignedEmployeeName: d.assigned_employee_name,
   internalNotes: d.internal_notes,
+  steps: (d.steps ?? []).map((s: Dto) => ({ id: s.id, order: s.order, title: s.title, done: s.done, doneAt: s.done_at })),
+  invoice: d.invoice
+    ? {
+        id: d.invoice.id,
+        number: d.invoice.number,
+        total: d.invoice.total,
+        paidAmount: d.invoice.paid_amount,
+        balance: d.invoice.balance,
+        status: d.invoice.status,
+      }
+    : d.invoice,
   history: d.history?.map((h: Dto) => ({
     action: h.action,
     fromStatus: h.from_status,

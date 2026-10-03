@@ -67,6 +67,63 @@ class BillingTests(BaseCase):
         other = APIClient()
         other.force_authenticate(self.other.user)
         self.assertEqual(other.get(f"/api/v1/invoices/{invoice['id']}/pdf/").status_code, 404)
+        # Un rendez-vous d'un autre client, encore en attente : facture hors du périmètre du comptoir
         tech = APIClient()
         tech.force_authenticate(self.tech_user)
-        self.assertEqual(tech.get("/api/v1/invoices/").status_code, 403)
+        Appointment.objects.filter(pk=self.appointment_id).update(status=Appointment.Status.CONFIRMED)
+        self.assertEqual(tech.get("/api/v1/invoices/").data["count"], 0)
+
+
+class CounterPaymentTests(BaseCase):
+    """Le client récupère sa voiture et paie au comptoir (souvent en espèces)."""
+
+    def setUp(self):
+        super().setUp()
+        self.appointment_id = self.book(api=self.as_client(), vehicle=self.vehicle.id).data["id"]
+        self.url = f"/api/v1/appointments/{self.appointment_id}/"
+        manager = self.as_manager()
+        for action in ["confirm", "check_in", "start"]:
+            manager.post(self.url + "transition/", {"action": action}, format="json")
+        self.finish_steps(self.appointment_id)
+        for action in ["submit_quality_check", "complete"]:
+            manager.post(self.url + "transition/", {"action": action}, format="json")
+        self.tech_api = APIClient()
+        self.tech_api.force_authenticate(self.tech_user)
+
+    def test_invoice_ready_when_service_validated(self):
+        invoice = self.as_manager().get(self.url).data["invoice"]
+        self.assertEqual(invoice["total"], 40000)
+        self.assertEqual(invoice["balance"], 40000)
+
+    def test_technician_collects_cash_but_cannot_refund(self):
+        invoice_id = self.as_manager().get(self.url).data["invoice"]["id"]
+        paid = self.tech_api.post(
+            f"/api/v1/invoices/{invoice_id}/payments/", {"amount": 40000, "method": "cash"}, format="json"
+        )
+        self.assertEqual(paid.status_code, 200, paid.data)
+        self.assertEqual(paid.data["status"], "paid")
+        self.assertEqual(paid.data["payments"][0]["recorded_by"], "tech@test.sn")
+        refund = self.tech_api.post(f"/api/v1/payments/{paid.data['payments'][0]['id']}/refund/", {"reason": "x"}, format="json")
+        self.assertEqual(refund.status_code, 403)
+        self.assertEqual(self.tech_api.post(f"/api/v1/invoices/{invoice_id}/cancel/", {"reason": "x"}, format="json").status_code, 403)
+
+        report = self.as_manager().get("/api/v1/payments/cash-report/").data
+        self.assertEqual(report["cash_total"], 40000)
+        self.assertEqual(report["by_person"][0]["person"], "tech@test.sn")
+        self.assertEqual(self.tech_api.get("/api/v1/payments/cash-report/").status_code, 403)
+
+    def test_handover_with_unpaid_balance_is_allowed_and_traced(self):
+        response = self.tech_api.post(self.url + "transition/", {"action": "deliver"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        last = self.as_manager().get(self.url).data["history"][-1]
+        self.assertIn("reste à payer de 40 000 FCFA", last["note"])
+
+    def test_quote_service_has_no_automatic_invoice(self):
+        original = Appointment.objects.get(pk=self.appointment_id)
+        quote = Appointment.objects.create(
+            reference="RDV-DEVIS", customer=self.customer, vehicle=self.vehicle, service=self.service,
+            start_at=original.start_at, end_at=original.end_at, price_estimate=None,
+            status=Appointment.Status.QUALITY_CHECK,
+        )
+        self.as_manager().post(f"/api/v1/appointments/{quote.id}/transition/", {"action": "complete"}, format="json")
+        self.assertIsNone(self.as_manager().get(f"/api/v1/appointments/{quote.id}/").data["invoice"])

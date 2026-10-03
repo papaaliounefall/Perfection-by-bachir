@@ -89,12 +89,25 @@ def apply_transition(appointment_id, action, user, note="") -> Appointment:
 
         if action == "submit_quality_check" and not workshop.all_steps_done(appointment):
             raise Conflict("Toutes les étapes de traitement doivent être validées avant le contrôle final.")
+        if action == "deliver":
+            from apps.billing.services import balance_due  # import local : évite un cycle
+
+            due = balance_due(appointment)
+            if due:
+                # Restitution autorisée (décision de l'atelier) mais tracée
+                note = f"Restitué avec un reste à payer de {due:,} FCFA. {note}".replace(",", " ").strip()
         previous = appointment.status
         appointment.status = transition.target
         appointment.save(update_fields=["status", "updated_at"])
         if action == "check_in":
             workshop.create_steps(appointment)
         _log(appointment, action, previous, user, note)
+
+    if action == "complete":
+        # Facture prête pour le passage du client au comptoir
+        from apps.billing.services import ensure_invoice
+
+        ensure_invoice(appointment, user)
     return appointment
 
 

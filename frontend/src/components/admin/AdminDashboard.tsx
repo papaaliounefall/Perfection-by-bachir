@@ -25,6 +25,7 @@ import { MenuButton, ResponsiveSidebar } from '../ui/ResponsiveSidebar';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { PaymentsPage } from './pages/PaymentsPage';
 import { ServicesPage } from './pages/ServicesPage';
 import { TeamPage } from './pages/TeamPage';
 import { VehiclesPage } from './pages/VehiclesPage';
@@ -58,7 +59,7 @@ const NAV: { group: string; items: { id: AdminPage; label: string; icon: React.E
   {
     group: 'Finances',
     items: [
-      { id: 'payments', label: 'Paiements', icon: CreditCard, roles: MANAGERS },
+      { id: 'payments', label: 'Journal de caisse', icon: CreditCard, roles: MANAGERS },
       { id: 'invoices', label: 'Factures', icon: FileText, roles: MANAGERS },
     ],
   },
@@ -194,12 +195,13 @@ export const AdminDashboard: React.FC = () => {
           {adminPage === 'vehicles' && <VehiclesPage />}
           {adminPage === 'services' && <ServicesPage />}
           {adminPage === 'team' && <TeamPage />}
-          {(adminPage === 'payments' || adminPage === 'invoices') && (
+          {adminPage === 'payments' && <PaymentsPage />}
+          {adminPage === 'invoices' && (
             <ComingSoon
               tone="light"
-              title={adminPage === 'payments' ? 'Paiements' : 'Facturation'}
-              phase="Phase 3 — Finances"
-              description="Encaissements (Wave, Orange Money, carte, espèces, virement), factures INV-AAAA-XXXX en PDF et suivi du reste à payer."
+              title="Facturation"
+              phase="Écran en préparation"
+              description="Les factures sont créées automatiquement à la validation des prestations et s’encaissent depuis la fiche du rendez-vous ou au comptoir. La liste complète, les devis et les annulations arrivent ici."
             />
           )}
           {adminPage === 'gallery' && (

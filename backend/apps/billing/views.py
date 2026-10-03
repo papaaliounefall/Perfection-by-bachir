@@ -1,10 +1,12 @@
+from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from apps.core.permissions import IsManager, is_manager, is_staff_member
+from apps.appointments.selectors import visible_appointments
+from apps.core.permissions import IsManager, IsStaffMember, is_manager, is_staff_member
 
 from . import services
 from .models import Invoice, Payment
@@ -31,7 +33,8 @@ class InvoiceViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
             customer = self.request.query_params.get("customer")
             return qs.filter(customer_id=customer) if customer else qs
         if is_staff_member(user):
-            raise PermissionDenied("Accès réservé au manager et à l'administrateur.")
+            # Comptoir : factures des rendez-vous visibles par le technicien (véhicules prêts…)
+            return qs.filter(appointment__in=visible_appointments(user))
         customer = getattr(user, "customer", None)
         return qs.filter(customer=customer) if customer else qs.none()
 
@@ -54,8 +57,10 @@ class InvoiceViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
         response.status_code = status.HTTP_201_CREATED
         return response
 
-    @action(detail=True, methods=["post"], permission_classes=[IsManager])
+    @action(detail=True, methods=["post"], permission_classes=[IsStaffMember])
     def payments(self, request, pk=None):
+        """Encaissement : manager, ou technicien au comptoir (paiement signé de son nom).
+        Remboursement, annulation et remise restent réservés au manager."""
         invoice = self.get_object()
         data = PaymentCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
@@ -100,6 +105,40 @@ class PaymentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         if params.get("method"):
             qs = qs.filter(method=params["method"])
         return qs
+
+    @action(detail=False, methods=["get"], url_path="cash-report")
+    def cash_report(self, request):
+        """Journal de caisse d'une journée : totaux par moyen et par personne."""
+        from datetime import date as date_cls
+
+        from django.db.models import Count, Sum
+        from django.utils import timezone
+
+        try:
+            day = date_cls.fromisoformat(request.query_params.get("date", "")) if request.query_params.get("date") else timezone.localdate()
+        except ValueError:
+            return Response({"date": "Format AAAA-MM-JJ."}, status=status.HTTP_400_BAD_REQUEST)
+        payments = Payment.objects.filter(received_at__date=day).select_related("invoice__customer", "recorded_by")
+        active = payments.filter(refunded_at__isnull=True)
+        methods = dict(Payment.Method.choices)
+        by_method = [
+            {"method": methods[r["method"]], "amount": r["total"], "count": r["n"]}
+            for r in active.values("method").annotate(total=Sum("amount"), n=Count("id")).order_by("-total")
+        ]
+        by_person = [
+            {"person": r["recorded_by__email"] or "—", "amount": r["total"], "count": r["n"], "cash": r["cash"] or 0}
+            for r in active.values("recorded_by__email")
+            .annotate(total=Sum("amount"), n=Count("id"), cash=Sum("amount", filter=Q(method=Payment.Method.CASH)))
+            .order_by("-total")
+        ]
+        return Response({
+            "date": day.isoformat(),
+            "total": active.aggregate(t=Sum("amount"))["t"] or 0,
+            "cash_total": active.filter(method=Payment.Method.CASH).aggregate(t=Sum("amount"))["t"] or 0,
+            "by_method": by_method,
+            "by_person": by_person,
+            "payments": PaymentSerializer(payments, many=True).data,
+        })
 
     @action(detail=True, methods=["post"])
     def refund(self, request, pk=None):

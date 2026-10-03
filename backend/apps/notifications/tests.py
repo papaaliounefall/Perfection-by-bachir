@@ -30,9 +30,10 @@ class NotificationTests(BaseCase):
                 "Véhicule reçu",
                 "Prestation commencée",
                 "Votre véhicule est prêt",
+                "Facture disponible",  # créée automatiquement à la validation
             ],
         )
-        self.assertEqual(len(mail.outbox), 5)
+        self.assertEqual(len(mail.outbox), 6)
         self.assertEqual(mail.outbox[-1].to, ["client@test.sn"])
 
     def test_guest_gets_email_only(self):

@@ -202,9 +202,60 @@ export interface Appointment {
   customerNotes: string;
   assignedEmployeeId: number | null;
   assignedEmployeeName: string | null;
+  steps: WorkshopStep[];
   // Personnel uniquement
   internalNotes?: string;
   history?: StatusHistoryEntry[];
+  invoice?: InvoiceSummary | null;
+}
+
+export interface WorkshopStep {
+  id: number;
+  order: number;
+  title: string;
+  done: boolean;
+  doneAt: string | null;
+}
+
+export interface InvoiceSummary {
+  id: number;
+  number: string;
+  total: number;
+  paidAmount: number;
+  balance: number;
+  status: InvoiceStatus;
+}
+
+export type PhotoKind = 'inspection' | 'before' | 'after';
+
+export interface AppointmentPhoto {
+  id: number;
+  kind: PhotoKind;
+  kindLabel: string;
+  caption: string;
+  url: string;
+  createdAt: string;
+}
+
+export type PaymentMethod = 'wave' | 'orange_money' | 'card' | 'cash' | 'transfer';
+
+export interface CashReport {
+  date: string;
+  total: number;
+  cashTotal: number;
+  byMethod: { method: string; amount: number; count: number }[];
+  byPerson: { person: string; amount: number; count: number; cash: number }[];
+  payments: {
+    id: number;
+    invoiceNumber: string;
+    customerName: string;
+    amount: number;
+    method: string;
+    reference: string;
+    receivedAt: string;
+    recordedBy: string | null;
+    refunded: boolean;
+  }[];
 }
 
 export interface AppointmentFilters {

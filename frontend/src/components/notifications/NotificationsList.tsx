@@ -18,15 +18,22 @@ export const NotificationsList: React.FC<{
   const dark = tone === 'dark';
 
   const markAll = async () => {
-    await run(() => api.notifications.markAllRead());
+    const ok = await run(async () => {
+      await api.notifications.markAllRead();
+      return true;
+    });
+    if (!ok) return;
     notifications.setData((list) => list.map((n) => ({ ...n, read: true })));
     onChanged();
   };
 
   const open = async (n: AppNotification) => {
     if (!n.read) {
-      await run(() => api.notifications.markRead(n.id));
-      notifications.setData((list) => list.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+      const ok = await run(async () => {
+        await api.notifications.markRead(n.id);
+        return true;
+      });
+      if (ok) notifications.setData((list) => list.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
       onChanged();
     }
     onOpen(n);

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { api } from '../../../api';
 import { useApp } from '../../../context/AppContext';
 import { formatDateTime, formatFcfa, STATUS_LABELS } from '../../../lib/labels';
-import { Appointment } from '../../../types';
+import { useApiData } from '../../../lib/useApiData';
+import { Appointment, AppointmentPhoto } from '../../../types';
 import { Modal, StatusIndicator } from '../../ui/DesignSystem';
 
 export const card = 'bg-[#F8F8FA] text-[#111317] rounded-xl border border-neutral-200';
@@ -35,6 +36,11 @@ export const AppointmentDetailModal: React.FC<{
 }> = ({ appointment, onClose, onChanged }) => {
   const { run } = useApp();
   const [busy, setBusy] = useState(false);
+  const photos = useApiData<AppointmentPhoto[]>(
+    () => (appointment ? api.workshop.photos(appointment.id) : Promise.resolve([])),
+    [appointment?.id],
+    []
+  );
   if (!appointment) return null;
   const canCancel = appointment.allowedActions.includes('cancel');
 
@@ -80,6 +86,22 @@ export const AppointmentDetailModal: React.FC<{
             <span className="text-[#D49A3D] font-mono font-bold text-sm">{formatFcfa(appointment.price)}</span>
           </div>
         </div>
+        {photos.data.length > 0 && (
+          <div>
+            <p className="text-neutral-400 mb-2">Photos de l’atelier</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {photos.data.map((p) => (
+                <a key={p.id} href={p.url} target="_blank" rel="noopener" className="block rounded-lg overflow-hidden border border-white/10">
+                  <img src={p.url} alt={p.caption || p.kindLabel} className="w-full h-24 object-cover" loading="lazy" />
+                  <span className="block px-2 py-1 text-[11px] text-neutral-300 truncate">
+                    <span className="text-[#D49A3D]">{p.kindLabel}</span>
+                    {p.caption && ` · ${p.caption}`}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
         {appointment.customerNotes && (
           <p className="text-neutral-300">
             <span className="text-neutral-400">Vos instructions : </span>

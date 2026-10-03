@@ -98,14 +98,30 @@ class _HistorySerializer(serializers.ModelSerializer):
 class StaffAppointmentSerializer(AppointmentSerializer):
     history = _HistorySerializer(many=True, read_only=True)
     assigned_employee = serializers.PrimaryKeyRelatedField(read_only=True)
+    invoice = serializers.SerializerMethodField()
 
     class Meta(AppointmentSerializer.Meta):
         fields = AppointmentSerializer.Meta.fields + [
             "assigned_employee",
             "internal_notes",
             "history",
+            "invoice",
         ]
         read_only_fields = fields
+
+    def get_invoice(self, obj):
+        """Facture active (utile au comptoir : reste à payer avant restitution)."""
+        invoice = next((i for i in obj.invoices.all() if i.cancelled_at is None), None)
+        if invoice is None:
+            return None
+        return {
+            "id": invoice.id,
+            "number": invoice.number,
+            "total": invoice.total,
+            "paid_amount": invoice.paid_amount,
+            "balance": invoice.balance,
+            "status": invoice.status,
+        }
 
 
 def _local_datetime(day, time):
