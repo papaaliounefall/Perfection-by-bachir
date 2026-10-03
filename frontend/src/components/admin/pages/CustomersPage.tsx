@@ -136,7 +136,23 @@ export const CustomersPage: React.FC = () => {
         ) : customers.data.length === 0 ? (
           <EmptyState tone="light" message="Aucun client trouvé." />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul className="md:hidden divide-y divide-neutral-200">
+            {customers.data.map((c) => (
+              <li key={c.id}>
+                <button type="button" onClick={() => setSelected(c)} className="w-full text-left p-4 flex items-center justify-between gap-3">
+                  <span className="min-w-0 text-xs space-y-0.5">
+                    <span className="block text-sm font-bold truncate">{c.name}</span>
+                    <span className="block font-mono text-neutral-600">{c.phone}</span>
+                    <span className="block text-neutral-500 truncate">{c.email}</span>
+                    <span className="block text-neutral-500">Dernière prestation : {formatDate(c.lastServiceAt)}</span>
+                  </span>
+                  <StatusIndicator status={SEGMENT_LABELS[c.segment]} tone="light" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600 font-semibold">
@@ -172,6 +188,7 @@ export const CustomersPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

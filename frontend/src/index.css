@@ -52,3 +52,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #D49A3D;
 }
+
+/* Mobile : champs en 16 px pour éviter le zoom automatique d'iOS à la saisie */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

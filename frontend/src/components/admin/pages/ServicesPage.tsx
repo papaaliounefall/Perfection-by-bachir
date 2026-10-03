@@ -62,7 +62,46 @@ export const ServicesPage: React.FC = () => {
       />
 
       <div className={`${panel} overflow-hidden`}>
-        <div className="overflow-x-auto">
+        <ul className="md:hidden divide-y divide-neutral-200">
+          {services.map((srv) => (
+            <li key={srv.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold">{srv.name}</p>
+                  <p className="text-xs text-neutral-500">
+                    {CATEGORY_LABELS[srv.category]} · {srv.durationMinutes} min
+                  </p>
+                  <p className="text-xs font-mono font-bold mt-1">{priceLabel(srv)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const { slug: _slug, ...rest } = srv;
+                    setEditing(rest);
+                  }}
+                  className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg border border-neutral-200"
+                  aria-label={`Modifier ${srv.name}`}
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="text-neutral-600">Réservable en ligne</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={srv.available}
+                  onClick={() => toggle(srv)}
+                  className={`w-12 h-7 rounded-full p-0.5 flex items-center ${srv.available ? 'bg-[#D49A3D] justify-end' : 'bg-neutral-300 justify-start'}`}
+                  aria-label={`Réservable : ${srv.name}`}
+                >
+                  <span className="w-6 h-6 rounded-full bg-white shadow" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600 font-semibold">

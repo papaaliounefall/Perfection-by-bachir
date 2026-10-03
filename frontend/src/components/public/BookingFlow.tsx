@@ -156,7 +156,20 @@ export const BookingFlow: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-4 xl:col-span-3 bg-[#121418] border border-white/10 rounded-xl p-5">
+        {/* Mobile / tablette : indicateur compact plutôt que la liste des 7 étapes */}
+        <div className="lg:hidden" aria-live="polite">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <span className="text-neutral-400">
+              Étape <strong className="text-white">{step}</strong> / {STEPS.length}
+            </span>
+            <span className="font-semibold text-[#D49A3D]">{STEPS[step - 1]}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <div className="h-full bg-[#D49A3D] transition-all duration-300" style={{ width: `${(step / STEPS.length) * 100}%` }} />
+          </div>
+        </div>
+
+        <div className="hidden lg:block lg:col-span-4 xl:col-span-3 bg-[#121418] border border-white/10 rounded-xl p-5">
           <ol className="flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0">
             {STEPS.map((label, i) => {
               const number = i + 1;
@@ -196,7 +209,7 @@ export const BookingFlow: React.FC = () => {
           </ol>
         </div>
 
-        <div className="lg:col-span-8 xl:col-span-9 bg-[#121418] border border-white/10 rounded-xl p-6 md:p-8">
+        <div className="lg:col-span-8 xl:col-span-9 bg-[#121418] border border-white/10 rounded-xl p-4 sm:p-6 md:p-8">
           {formError && (
             <div className="mb-6 p-4 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm" role="alert">
               {formError}

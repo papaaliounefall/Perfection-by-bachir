@@ -255,14 +255,14 @@ export const Modal: React.FC<{
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
       aria-label={title}
       onClick={onClose}
     >
       <div
-        className={`relative w-full ${maxWidth} max-h-[90vh] overflow-y-auto rounded-xl bg-[#14161A] border border-white/12 text-[#F4F4F6] shadow-2xl`}
+        className={`relative w-full ${maxWidth} max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-xl bg-[#14161A] border border-white/12 text-[#F4F4F6] shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-[#14161A]/95 backdrop-blur-xs border-b border-white/10">
@@ -279,7 +279,7 @@ export const Modal: React.FC<{
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]">{children}</div>
       </div>
     </div>
   );
@@ -294,7 +294,7 @@ export const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+    <div className="fixed bottom-20 inset-x-4 md:inset-x-auto md:bottom-5 md:right-5 z-[60] flex flex-col gap-2.5 md:max-w-sm md:w-full pointer-events-none" aria-live="polite">
       {toasts.map((toast) => (
         <div
           key={toast.id}

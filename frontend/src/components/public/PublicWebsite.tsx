@@ -127,13 +127,13 @@ export const PublicWebsite: React.FC = () => {
             e.preventDefault();
             setPublicPage('home');
           }}
-          className="text-sm sm:text-base font-extrabold tracking-wider text-white font-display whitespace-nowrap"
+          className="text-sm sm:text-base font-extrabold tracking-wider text-white font-display whitespace-nowrap shrink-0"
         >
-          PERFECTION <span className="text-[#D49A3D] font-normal">BY BACHIR NDOUR</span>
+          PERFECTION <span className="hidden sm:inline lg:hidden xl:inline text-[#D49A3D] font-normal">BY BACHIR NDOUR</span>
         </a>
 
         {/* Zone 2: 5 clean text navigation links */}
-        <nav className="hidden lg:flex items-center gap-7 text-xs font-medium">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs font-medium">
           {NAV_ITEMS.map((item) => {
             const active =
               publicPage === item.id ||
@@ -192,15 +192,17 @@ export const PublicWebsite: React.FC = () => {
           <button
             type="button"
             onClick={() => startBookingWithService()}
-            className="px-4 py-2 rounded-lg border border-[#D49A3D] bg-[#D49A3D]/10 hover:bg-[#D49A3D] text-[#D49A3D] hover:text-[#0B0C0E] text-xs font-semibold transition-colors whitespace-nowrap"
+            className="px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg border border-[#D49A3D] bg-[#D49A3D]/10 hover:bg-[#D49A3D] text-[#D49A3D] hover:text-[#0B0C0E] text-xs font-semibold transition-colors whitespace-nowrap"
           >
-            Prendre rendez-vous
+            <span className="sm:hidden">Réserver</span>
+            <span className="hidden sm:inline">Prendre rendez-vous</span>
           </button>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg border border-white/10 text-neutral-300 hover:text-white"
+            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 text-neutral-300 hover:text-white"
             aria-label="Menu principal"
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -219,7 +221,7 @@ export const PublicWebsite: React.FC = () => {
                   setPublicPage(item.id as any);
                   setMobileMenuOpen(false);
                 }}
-                className="text-left py-1.5 text-sm font-medium text-neutral-200 hover:text-[#D49A3D]"
+                className="text-left py-3 text-base font-medium text-neutral-200 hover:text-[#D49A3D] border-b border-white/5"
               >
                 {item.label}
               </button>
@@ -624,14 +626,14 @@ export const PublicWebsite: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => startBookingWithService()}
-                    className="px-7 py-3.5 rounded-lg bg-[#D49A3D] hover:bg-[#e2a94c] text-[#0B0C0E] font-semibold text-sm transition-colors whitespace-nowrap"
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-lg bg-[#D49A3D] hover:bg-[#e2a94c] text-[#0B0C0E] font-semibold text-sm transition-colors sm:whitespace-nowrap"
                   >
                     Prendre rendez-vous maintenant
                   </button>
                   <button
                     type="button"
                     onClick={() => setPublicPage('contact')}
-                    className="px-7 py-3.5 rounded-lg border border-white/20 hover:bg-white/5 text-white font-medium text-sm transition-colors whitespace-nowrap"
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-lg border border-white/20 hover:bg-white/5 text-white font-medium text-sm transition-colors sm:whitespace-nowrap"
                   >
                     Contacter l’atelier{BUSINESS.phone ? ` (${BUSINESS.phone})` : ''}
                   </button>

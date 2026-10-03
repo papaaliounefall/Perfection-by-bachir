@@ -28,7 +28,11 @@ const FILTERS: { label: string; statuses?: AppointmentStatus[] }[] = [
 
 const RESCHEDULABLE: AppointmentStatus[] = ['pending', 'confirmed', 'rescheduled'];
 
-const ActionButtons: React.FC<{ apt: Appointment; onDone: (updated: Appointment) => void }> = ({ apt, onDone }) => {
+const ActionButtons: React.FC<{ apt: Appointment; onDone: (updated: Appointment) => void; align?: 'start' | 'end' }> = ({
+  apt,
+  onDone,
+  align = 'end',
+}) => {
   const { run } = useApp();
   const [busy, setBusy] = useState(false);
 
@@ -41,14 +45,14 @@ const ActionButtons: React.FC<{ apt: Appointment; onDone: (updated: Appointment)
   };
 
   return (
-    <div className="flex flex-wrap justify-end gap-1.5">
+    <div className={`flex flex-wrap gap-2 lg:gap-1.5 ${align === 'end' ? 'justify-end' : 'justify-start'}`}>
       {apt.allowedActions.map((action) => (
         <button
           key={action}
           type="button"
           disabled={busy}
           onClick={() => act(action)}
-          className={`px-2.5 py-1 rounded text-[11px] font-semibold disabled:opacity-50 ${
+          className={`min-h-10 lg:min-h-0 px-3.5 lg:px-2.5 py-2 lg:py-1 rounded-lg lg:rounded text-xs lg:text-[11px] font-semibold disabled:opacity-50 ${
             DESTRUCTIVE_ACTIONS.includes(action)
               ? 'border border-rose-300 text-rose-700 hover:bg-rose-50'
               : 'bg-[#111317] text-white hover:bg-neutral-800'
@@ -251,32 +255,36 @@ export const AppointmentsPage: React.FC = () => {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-2 mb-6">
+        <div className="flex gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap pb-1 sm:pb-0">
         {FILTERS.map((f) => (
           <button
             key={f.label}
             type="button"
             onClick={() => setFilter(f)}
             aria-pressed={filter === f}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border ${
+            className={`shrink-0 px-4 py-2.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-semibold border whitespace-nowrap ${
               filter === f ? 'bg-[#111317] text-white border-[#111317]' : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
             }`}
           >
             {f.label}
           </button>
         ))}
-        <input
-          type="date"
-          aria-label="Filtrer par date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="ml-auto px-3 py-1.5 rounded-lg border border-neutral-200 bg-white text-xs"
-        />
-        {date && (
-          <button type="button" onClick={() => setDate('')} className="text-xs text-neutral-500 underline">
-            Toutes les dates
-          </button>
-        )}
+        </div>
+        <div className="flex items-center gap-3 sm:ml-auto">
+          <input
+            type="date"
+            aria-label="Filtrer par date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="flex-1 sm:flex-none px-3 py-2.5 sm:py-1.5 rounded-lg border border-neutral-200 bg-white text-xs"
+          />
+          {date && (
+            <button type="button" onClick={() => setDate('')} className="text-xs text-neutral-500 underline whitespace-nowrap">
+              Toutes les dates
+            </button>
+          )}
+        </div>
       </div>
 
       {appointments.error && <ErrorState message={appointments.error} onRetry={appointments.reload} />}
@@ -286,7 +294,52 @@ export const AppointmentsPage: React.FC = () => {
         ) : appointments.data.length === 0 ? (
           <EmptyState tone="light" message="Aucun rendez-vous pour ces critères." />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul className="lg:hidden divide-y divide-neutral-200">
+            {appointments.data.map((apt) => (
+              <li key={apt.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs font-bold">{formatDateTime(apt.startAt)}</p>
+                    <p className="font-mono text-[11px] text-neutral-400">{apt.reference}</p>
+                  </div>
+                  <StatusIndicator status={STATUS_LABELS[apt.status]} tone="light" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                  <p>
+                    <span className="block text-neutral-500">Client</span>
+                    <span className="font-semibold">{apt.customerName}</span>{' '}
+                    <a href={`tel:${apt.customerPhone}`} className="font-mono text-[#B87D24] underline">
+                      {apt.customerPhone}
+                    </a>
+                  </p>
+                  <p>
+                    <span className="block text-neutral-500">Véhicule</span>
+                    {apt.vehicleName} <span className="font-mono text-neutral-500">{apt.vehicleRegistration}</span>
+                  </p>
+                  <p>
+                    <span className="block text-neutral-500">Prestation</span>
+                    {apt.serviceName} <span className="font-mono text-neutral-500">· {formatFcfa(apt.price)}</span>
+                  </p>
+                  <p>
+                    <span className="block text-neutral-500">Technicien</span>
+                    {apt.assignedEmployeeName ?? 'Non affecté'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <ActionButtons apt={apt} onDone={replace} align="start" />
+                  <button
+                    type="button"
+                    onClick={() => setEditing(apt)}
+                    className="min-h-10 px-3.5 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 text-xs font-semibold"
+                  >
+                    Gérer
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-neutral-200 bg-neutral-50 text-neutral-600 font-semibold">
@@ -337,6 +390,7 @@ export const AppointmentsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BarChart3,
   Bell,
@@ -21,6 +21,7 @@ import { NotificationsList, UnreadBadge } from '../notifications/NotificationsLi
 import { formatDayLong, initials, isoDay } from '../../lib/labels';
 import { AdminPage, Role } from '../../types';
 import { ComingSoon } from '../ui/DesignSystem';
+import { MenuButton, ResponsiveSidebar } from '../ui/ResponsiveSidebar';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -79,7 +80,12 @@ const ROLE_LABELS: Record<Role, string> = {
 };
 
 export const AdminDashboard: React.FC = () => {
-  const { adminPage, setAdminPage, setPortalMode, user, logout } = useApp();
+  const { adminPage, setAdminPage: goTo, setPortalMode, user, logout } = useApp();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const setAdminPage = (page: typeof adminPage) => {
+    setMenuOpen(false);
+    goTo(page);
+  };
   const role = user!.role;
   const groups = NAV.map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(role)) })).filter(
     (g) => g.items.length
@@ -96,8 +102,8 @@ export const AdminDashboard: React.FC = () => {
   const fullName = `${user!.firstName} ${user!.lastName}`.trim() || user!.email;
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#0B0C0E] text-[#F4F4F6]">
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 flex flex-col justify-between shrink-0">
+    <div className="min-h-screen flex bg-[#0B0C0E] text-[#F4F4F6]">
+      <ResponsiveSidebar open={menuOpen} onClose={() => setMenuOpen(false)} label="Menu de l’espace professionnel">
         <div>
           <div className="h-16 px-6 flex items-center justify-between border-b border-white/10">
             <button
@@ -107,20 +113,12 @@ export const AdminDashboard: React.FC = () => {
             >
               PERFECTION <span className="text-[#D49A3D] block text-[10px] font-normal">ESPACE PROFESSIONNEL</span>
             </button>
-            <button
-              type="button"
-              onClick={logout}
-              className="md:hidden p-2 rounded border border-white/15 text-neutral-300"
-              aria-label="Se déconnecter"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
-          <nav className="p-3 md:p-4 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible" aria-label="Espace professionnel">
+          <nav className="p-4 flex flex-col gap-1" aria-label="Espace professionnel">
             {groups.map((g) => (
               <React.Fragment key={g.group || 'root'}>
                 {g.group && (
-                  <p className="hidden md:block text-[10px] uppercase tracking-wider text-neutral-500 font-semibold px-3 pt-3 pb-1">
+                  <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold px-3 pt-3 pb-1">
                     {g.group}
                   </p>
                 )}
@@ -130,7 +128,7 @@ export const AdminDashboard: React.FC = () => {
                     type="button"
                     onClick={() => setAdminPage(id)}
                     aria-current={adminPage === id ? 'page' : undefined}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                    className={`flex items-center gap-3 px-3 py-3 lg:py-2 rounded-lg text-sm lg:text-xs font-medium whitespace-nowrap transition-colors ${
                       adminPage === id
                         ? 'bg-[#D49A3D]/15 text-[#D49A3D] border border-[#D49A3D]/40 font-semibold'
                         : 'text-neutral-300 hover:text-white hover:bg-white/5'
@@ -145,40 +143,44 @@ export const AdminDashboard: React.FC = () => {
             ))}
           </nav>
         </div>
-        <div className="hidden md:flex flex-col gap-1 p-4 border-t border-white/10">
+        <div className="flex flex-col gap-1 p-4 border-t border-white/10">
           <button
             type="button"
             onClick={() => setPortalMode('public')}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-neutral-400 hover:text-white hover:bg-white/5"
+            className="flex items-center gap-2 px-3 py-3 lg:py-2 rounded-lg text-sm lg:text-xs text-neutral-400 hover:text-white hover:bg-white/5"
           >
             <Globe className="w-3.5 h-3.5 text-[#D49A3D]" /> Voir le site public
           </button>
           <button
             type="button"
             onClick={logout}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-neutral-400 hover:text-white hover:bg-white/5"
+            className="flex items-center gap-2 px-3 py-3 lg:py-2 rounded-lg text-sm lg:text-xs text-neutral-400 hover:text-white hover:bg-white/5"
           >
             <LogOut className="w-3.5 h-3.5 text-[#D49A3D]" /> Se déconnecter
           </button>
         </div>
-      </aside>
+      </ResponsiveSidebar>
 
       <div className="flex-1 flex flex-col min-w-0 bg-[#F4F5F7] text-[#111317]">
-        <header className="h-16 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shrink-0">
-          <span className="text-xs text-neutral-500">
-            {ROLE_LABELS[role]} · <strong className="text-[#111317]">{fullName}</strong>
-          </span>
-          <div className="flex items-center gap-3">
+        <header className="h-16 bg-white border-b border-neutral-200 px-4 sm:px-6 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <MenuButton tone="light" onClick={() => setMenuOpen(true)} />
+            <span className="text-xs text-neutral-500 truncate">
+              <span className="hidden sm:inline">{ROLE_LABELS[role]} · </span>
+              <strong className="text-[#111317]">{fullName}</strong>
+            </span>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setAdminPage('notifications')}
-              className="relative p-2 rounded-lg border border-neutral-200 text-neutral-600 hover:text-[#111317]"
+              className="relative w-10 h-10 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 hover:text-[#111317]"
               aria-label={`Notifications${unread.data ? ` (${unread.data} non lues)` : ''}`}
             >
               <Bell className="w-4 h-4" />
               <UnreadBadge count={unread.data} className="absolute -top-1.5 -right-1.5" />
             </button>
-            <span className="hidden sm:inline text-xs font-mono text-neutral-500 capitalize">{formatDayLong(isoDay(new Date()))}</span>
+            <span className="hidden md:inline text-xs font-mono text-neutral-500 capitalize">{formatDayLong(isoDay(new Date()))}</span>
             <span className="w-8 h-8 rounded-full bg-[#111317] text-[#D49A3D] font-bold text-xs flex items-center justify-center">
               {initials(fullName)}
             </span>

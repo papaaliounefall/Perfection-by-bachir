@@ -33,7 +33,7 @@ export const CustomerDashboard: React.FC<{ data: CustomerData }> = ({ data }) =>
         <p className="text-xs sm:text-sm text-neutral-400 mt-1">Le suivi de vos véhicules et de vos rendez-vous.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         <div className={`${card} p-5 flex flex-col justify-between`}>
           <div>
             <div className="flex items-center gap-2 text-xs text-neutral-500 font-medium">
