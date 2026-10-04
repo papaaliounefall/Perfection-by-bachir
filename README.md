@@ -99,7 +99,7 @@ verrous de ligne, n'existent que sur PostgreSQL.
 | 1 — Socle | Auth, rôles, mot de passe oublié, prestations, clients, véhicules (+ photo), rendez-vous, réservation, dashboard | Fait | Fait |
 | 2 — Atelier | Étapes de traitement, photos inspection / Avant / Après, avancement réel | Fait | Fait |
 | 3 — Finances | Factures (auto + devis), encaissement au comptoir, remboursements, annulations, PDF, journal de caisse | Fait | Fait |
-| 4 — Contenu & analyse | Galerie, avis, chiffres clés, statistiques, CSV, notifications | Fait | Statistiques, exports, notifications, affichage public : fait. Écran Galerie : à faire |
+| 4 — Contenu & analyse | Galerie, avis, chiffres clés, statistiques, CSV, notifications | Fait | Fait |
 | 5 — Évolutions | Paiement en ligne, WhatsApp/SMS, mobile | À faire | À faire |
 
 Reste aussi : mise en ligne (serveur, domaine, HTTPS, SMTP, sauvegardes), routage par URL (SEO),
