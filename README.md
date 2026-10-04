@@ -97,13 +97,12 @@ verrous de ligne, n'existent que sur PostgreSQL.
 | Phase | Contenu | API | Interface |
 |---|---|---|---|
 | 1 — Socle | Auth, rôles, mot de passe oublié, prestations, clients, véhicules (+ photo), rendez-vous, réservation, dashboard | Fait | Fait |
-| 2 — Atelier | Étapes de traitement, photos inspection / Avant / Après, avancement réel | Fait | À faire (espace pro) |
-| 3 — Finances | Factures, paiements, remboursements, PDF | Fait | Client : factures + PDF. Espace pro : à faire |
-| 4 — Contenu & analyse | Galerie, avis, chiffres clés, statistiques, CSV, notifications | Fait | Site public + notifications : fait. Espace pro : à faire |
-| 5 — Évolutions | Paiement API, WhatsApp/SMS, mobile | À faire | À faire |
+| 2 — Atelier | Étapes de traitement, photos inspection / Avant / Après, avancement réel | Fait | Fait |
+| 3 — Finances | Factures (auto + devis), encaissement au comptoir, remboursements, annulations, PDF, journal de caisse | Fait | Fait |
+| 4 — Contenu & analyse | Galerie, avis, chiffres clés, statistiques, CSV, notifications | Fait | Site public + notifications : fait. Écrans Galerie et Statistiques : à faire |
+| 5 — Évolutions | Paiement en ligne, WhatsApp/SMS, mobile | À faire | À faire |
 
-En attendant les écrans de l'espace pro, l'administrateur gère factures, galerie et contenus dans `/admin/`.
-Reste aussi : routage par URL (React Router) pour le SEO, stockage objet des médias (S3/R2), déploiement
-(Docker, Nginx, Gunicorn).
+Reste aussi : mise en ligne (serveur, domaine, HTTPS, SMTP, sauvegardes), routage par URL (SEO),
+stockage objet des médias (S3/R2), tests frontend.
 
 Documentation fonctionnelle (rôles, parcours, modules) : [Word](docs/guide-fonctionnement.docx) · [PDF](docs/guide-fonctionnement.pdf)

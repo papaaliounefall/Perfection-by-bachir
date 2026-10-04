@@ -325,6 +325,8 @@ export interface Invoice {
   number: string;
   status: InvoiceStatus;
   statusLabel: string;
+  customerName: string;
+  appointmentId: number | null;
   appointmentReference: string | null;
   vehicle: string | null;
   issuedAt: string;
@@ -334,8 +336,16 @@ export interface Invoice {
   total: number;
   paidAmount: number;
   balance: number;
-  payments: { id: number; amount: number; method: string; receivedAt: string; refunded: boolean }[];
+  payments: { id: number; amount: number; method: string; reference: string; receivedAt: string; refunded: boolean; recordedBy: string | null }[];
+  notes: string;
+  cancelReason: string;
   pdfUrl: string;
+}
+
+export interface InvoiceLineInput {
+  label: string;
+  quantity: number;
+  unitPrice: number;
 }
 
 export interface ContactInput {

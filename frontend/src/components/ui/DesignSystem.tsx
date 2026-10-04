@@ -61,6 +61,7 @@ export const StatusIndicator: React.FC<{
       case 'Terminé':
       case 'Restitué':
       case 'Payé':
+      case 'Payée':
       case 'Prêt':
       case 'Actif':
       case 'VIP':
@@ -74,6 +75,7 @@ export const StatusIndicator: React.FC<{
       case 'Contrôle final':
       case 'Occupé':
       case 'Partiellement payé':
+      case 'Partiellement payée':
         return {
           icon: Wrench,
           colorClass: tone === 'dark' ? 'text-[#D49A3D]' : 'text-amber-700',
@@ -88,6 +90,8 @@ export const StatusIndicator: React.FC<{
           colorClass: tone === 'dark' ? 'text-amber-400' : 'text-amber-700',
         };
       case 'Annulé':
+      case 'Annulée':
+      case 'Remboursée':
       case 'Refusé':
       case 'Absent':
         return {

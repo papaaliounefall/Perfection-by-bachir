@@ -25,6 +25,7 @@ import { MenuButton, ResponsiveSidebar } from '../ui/ResponsiveSidebar';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { InvoicesPage } from './pages/InvoicesPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { ServicesPage } from './pages/ServicesPage';
 import { TeamPage } from './pages/TeamPage';
@@ -196,14 +197,7 @@ export const AdminDashboard: React.FC = () => {
           {adminPage === 'services' && <ServicesPage />}
           {adminPage === 'team' && <TeamPage />}
           {adminPage === 'payments' && <PaymentsPage />}
-          {adminPage === 'invoices' && (
-            <ComingSoon
-              tone="light"
-              title="Facturation"
-              phase="Écran en préparation"
-              description="Les factures sont créées automatiquement à la validation des prestations et s’encaissent depuis la fiche du rendez-vous ou au comptoir. La liste complète, les devis et les annulations arrivent ici."
-            />
-          )}
+          {adminPage === 'invoices' && <InvoicesPage />}
           {adminPage === 'gallery' && (
             <ComingSoon
               tone="light"

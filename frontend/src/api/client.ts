@@ -12,6 +12,7 @@ import {
   ContactInput,
   CurrentUser,
   Invoice,
+  InvoiceLineInput,
   Customer,
   CustomerProfile,
   DashboardSummary,
@@ -46,6 +47,10 @@ export interface ApiClient {
   };
   invoices: {
     list(): Promise<Invoice[]>;
+    /** Manager : facture d'une prestation terminée (lignes libres pour un devis). */
+    create(input: { appointmentId: number; lines?: InvoiceLineInput[]; discount: number; notes?: string }): Promise<Invoice>;
+    /** Manager : uniquement si aucun paiement actif (rembourser d'abord). */
+    cancel(invoiceId: number, reason: string): Promise<Invoice>;
     /** Encaissement (manager, ou technicien au comptoir). */
     recordPayment(invoiceId: number, amount: number, method: PaymentMethod, reference?: string): Promise<void>;
   };

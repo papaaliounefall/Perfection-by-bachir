@@ -58,13 +58,6 @@ COUNTER_ACTIONS = {"check_in", "deliver"}
 MAIN_FLOW = [S.PENDING, S.CONFIRMED, S.RECEIVED, S.IN_PROGRESS, S.QUALITY_CHECK, S.DONE, S.DELIVERED]
 
 
-def progress(status: str):
-    """Avancement (0–100) déduit des étapes réellement validées, pas du temps écoulé."""
-    if status not in MAIN_FLOW:
-        return None
-    return round(MAIN_FLOW.index(status) * 100 / (len(MAIN_FLOW) - 1))
-
-
 def role_allows(user, appointment: Appointment, action: str) -> bool:
     if is_manager(user):
         return True

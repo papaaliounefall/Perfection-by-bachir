@@ -17,6 +17,36 @@ import { request, requestAll, upload } from './request';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Dto = Record<string, any>;
 
+const toInvoice = (d: Dto) => ({
+  id: d.id,
+  number: d.number,
+  status: d.status,
+  statusLabel: d.status_display,
+  customerName: d.customer_name,
+  appointmentId: d.appointment,
+  appointmentReference: d.appointment_reference,
+  vehicle: d.vehicle,
+  issuedAt: d.issued_at,
+  lines: d.lines.map((l: Dto) => ({ label: l.label, quantity: l.quantity, unitPrice: l.unit_price, total: l.total })),
+  subtotal: d.subtotal,
+  discount: d.discount,
+  total: d.total,
+  paidAmount: d.paid_amount,
+  balance: d.balance,
+  payments: d.payments.map((p: Dto) => ({
+    id: p.id,
+    amount: p.amount,
+    method: p.method_display,
+    reference: p.reference,
+    receivedAt: p.received_at,
+    refunded: p.refunded,
+    recordedBy: p.recorded_by,
+  })),
+  notes: d.notes,
+  cancelReason: d.cancel_reason,
+  pdfUrl: `/api/v1/invoices/${d.id}/pdf/`,
+});
+
 const toPhoto = (p: Dto) => ({
   id: p.id,
   kind: p.kind,
@@ -123,30 +153,17 @@ export const httpApi: ApiClient = {
   },
 
   invoices: {
-    list: async () =>
-      (await requestAll<Dto>('/invoices/')).map((d) => ({
-        id: d.id,
-        number: d.number,
-        status: d.status,
-        statusLabel: d.status_display,
-        appointmentReference: d.appointment_reference,
-        vehicle: d.vehicle,
-        issuedAt: d.issued_at,
-        lines: d.lines.map((l: Dto) => ({ label: l.label, quantity: l.quantity, unitPrice: l.unit_price, total: l.total })),
-        subtotal: d.subtotal,
-        discount: d.discount,
-        total: d.total,
-        paidAmount: d.paid_amount,
-        balance: d.balance,
-        payments: d.payments.map((p: Dto) => ({
-          id: p.id,
-          amount: p.amount,
-          method: p.method_display,
-          receivedAt: p.received_at,
-          refunded: p.refunded,
-        })),
-        pdfUrl: `/api/v1/invoices/${d.id}/pdf/`,
-      })),
+    list: async () => (await requestAll<Dto>('/invoices/')).map(toInvoice),
+    create: async ({ appointmentId, lines, discount, notes }) =>
+      toInvoice(
+        await request<Dto>('POST', '/invoices/', {
+          appointment: appointmentId,
+          ...(lines ? { lines: lines.map((l) => ({ label: l.label, quantity: l.quantity, unit_price: l.unitPrice })) } : {}),
+          discount,
+          notes: notes ?? '',
+        })
+      ),
+    cancel: async (invoiceId, reason) => toInvoice(await request<Dto>('POST', `/invoices/${invoiceId}/cancel/`, { reason })),
     recordPayment: async (invoiceId, amount, method, reference) => {
       await request('POST', `/invoices/${invoiceId}/payments/`, { amount, method, reference: reference ?? '' });
     },

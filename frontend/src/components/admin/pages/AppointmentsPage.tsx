@@ -16,6 +16,7 @@ import { useApiData } from '../../../lib/useApiData';
 import { Appointment, AppointmentAction, AppointmentStatus, Employee, TimeSlot } from '../../../types';
 import { EmptyState, ErrorState, LoadingState, Modal, StatusIndicator } from '../../ui/DesignSystem';
 import { HandoverModal, PaymentForm } from './CounterPayment';
+import { CreateInvoiceModal } from './InvoicesPage';
 import { darkInput, Field, PageHeader, panel, td, th } from './shared';
 import { WorkshopPanel } from './WorkshopPanel';
 
@@ -100,6 +101,8 @@ const ManageModal: React.FC<{
     if (fresh) onUpdated(fresh);
   };
   const inWorkshop = WORKSHOP_STATUSES.includes(apt.status);
+  const [invoicing, setInvoicing] = useState(false);
+  const needsInvoice = isManager && !apt.invoice && (apt.status === 'done' || apt.status === 'delivered');
 
   return (
     <Modal isOpen onClose={onClose} title={`Rendez-vous ${apt.reference}`} subtitle={`${apt.vehicleName} — ${apt.serviceName}`}>
@@ -127,6 +130,26 @@ const ManageModal: React.FC<{
 
         {inWorkshop && (
           <WorkshopPanel apt={apt} onProgress={(steps, progress) => onUpdated({ ...apt, steps, progress })} />
+        )}
+
+        {needsInvoice && (
+          <section className="p-3 rounded-lg border border-amber-500/40 bg-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <span className="text-amber-200">Prestation terminée sans facture (sur devis ou facture annulée).</span>
+            <button type="button" onClick={() => setInvoicing(true)} className="min-h-10 px-4 rounded-lg bg-[#D49A3D] text-[#0B0C0E] font-semibold whitespace-nowrap">
+              Établir la facture
+            </button>
+          </section>
+        )}
+        {invoicing && (
+          <CreateInvoiceModal
+            candidates={[]}
+            preselected={apt}
+            onClose={() => setInvoicing(false)}
+            onCreated={() => {
+              setInvoicing(false);
+              refresh();
+            }}
+          />
         )}
 
         {apt.invoice && (

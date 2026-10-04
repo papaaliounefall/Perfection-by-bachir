@@ -512,6 +512,8 @@ export const mockApi: ApiClient = {
   // La facturation n'est pas simulée : elle se montre avec le vrai serveur
   invoices: {
     list: () => delay([]),
+    create: () => fail('Facturation indisponible en mode démo.', 400),
+    cancel: () => fail('Facturation indisponible en mode démo.', 400),
     recordPayment: () => fail('Encaissement indisponible en mode démo.', 400),
   },
 

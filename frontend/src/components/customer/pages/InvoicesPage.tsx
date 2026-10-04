@@ -7,14 +7,6 @@ import { Invoice } from '../../../types';
 import { EmptyState, ErrorState, LoadingState, StatusIndicator } from '../../ui/DesignSystem';
 import { card, PageTitle } from './shared';
 
-const STATUS_TONE: Record<Invoice['status'], string> = {
-  pending: 'En attente',
-  partial: 'Partiellement payé',
-  paid: 'Payé',
-  refunded: 'Annulé',
-  cancelled: 'Annulé',
-};
-
 export const InvoicesPage: React.FC = () => {
   const invoices = useApiData<Invoice[]>(() => api.invoices.list(), [], []);
 
@@ -45,11 +37,9 @@ export const InvoicesPage: React.FC = () => {
                   {inv.balance > 0 && inv.status !== 'cancelled' && (
                     <p className="text-neutral-500 font-mono">Reste : {formatFcfa(inv.balance)}</p>
                   )}
-                  {/* Libellé exact du serveur ; la couleur suit le statut */}
                   <span className="inline-flex">
-                    <StatusIndicator status={STATUS_TONE[inv.status]} tone="light" />
+                    <StatusIndicator status={inv.statusLabel} tone="light" />
                   </span>
-                  <span className="sr-only">{inv.statusLabel}</span>
                 </div>
                 <a
                   href={inv.pdfUrl}
