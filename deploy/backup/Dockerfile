@@ -1,0 +1,3 @@
+FROM postgres:17
+COPY backup.sh /backup.sh
+ENTRYPOINT ["sh", "/backup.sh"]

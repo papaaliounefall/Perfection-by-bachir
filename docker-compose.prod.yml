@@ -1,0 +1,72 @@
+# Production : à utiliser EN PLUS de docker-compose.yml, sur le serveur.
+#
+#   cp .env.prod.example .env      # puis remplir (domaine, clé secrète, SMTP…)
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Différences avec l'usage local :
+# - Caddy reçoit le trafic (ports 80/443) et obtient seul les certificats HTTPS (Let's Encrypt) ;
+# - la base et le site ne sont plus exposés directement : tout passe par Caddy ;
+# - cookies sécurisés, HSTS, clé secrète et mot de passe de base obligatoires ;
+# - sauvegarde automatique quotidienne de la base et des photos (volume « backups »),
+#   à copier hors du serveur : docker compose cp backup:/backups ./sauvegardes
+
+services:
+  db:
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obligatoire en production}
+
+  backend:
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY obligatoire en production}
+      DJANGO_ALLOWED_HOSTS: ${DOMAIN:?DOMAIN obligatoire (ex. perfection-detailing.com)}
+      DJANGO_CSRF_TRUSTED_ORIGINS: https://${DOMAIN}
+      DJANGO_SECURE_COOKIES: "true"
+      DJANGO_HSTS_SECONDS: ${DJANGO_HSTS_SECONDS:-31536000}
+      FRONTEND_URL: https://${DOMAIN}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DJANGO_EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+      DJANGO_EMAIL_HOST: ${SMTP_HOST:?SMTP_HOST obligatoire (envoi des emails)}
+      DJANGO_EMAIL_PORT: ${SMTP_PORT:-587}
+      DJANGO_EMAIL_HOST_USER: ${SMTP_USER:-}
+      DJANGO_EMAIL_HOST_PASSWORD: ${SMTP_PASSWORD:-}
+      DJANGO_DEFAULT_FROM_EMAIL: ${SMTP_FROM:-Perfection <no-reply@${DOMAIN}>}
+
+  frontend:
+    ports: !reset []
+
+  caddy:
+    build: ./deploy/caddy
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+  backup:
+    build: ./deploy/backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: perfection
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: perfection
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - backups:/backups
+      - media:/media:ro
+
+volumes:
+  caddy_data:
+  caddy_config:
+  backups:

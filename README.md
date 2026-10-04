@@ -71,6 +71,32 @@ npm run dev        # http://localhost:3000, /api est redirigé vers Django (port
 npm run dev:mock   # mode démo : données simulées en mémoire, aucun backend nécessaire
 ```
 
+## Mise en ligne (production)
+
+La configuration de production est prête : `docker-compose.prod.yml` s'ajoute à `docker-compose.yml` et apporte
+**Caddy** (HTTPS automatique Let's Encrypt, redirection http → https et www → domaine), cookies sécurisés, HSTS,
+base et site non exposés directement, et une **sauvegarde quotidienne** de la base et des photos (14 jours gardés).
+
+**Il faut** : un serveur Linux (VPS 2 vCPU / 2–4 Go de RAM, Ubuntu LTS, Docker installé), un nom de domaine
+dont l'enregistrement DNS `A` pointe vers l'IP du serveur, et un compte SMTP pour les emails.
+
+```bash
+git clone https://github.com/papaaliounefall/Perfection-by-bachir.git && cd Perfection-by-bachir
+cp .env.prod.example .env          # remplir : DOMAIN, DJANGO_SECRET_KEY, POSTGRES_PASSWORD, SMTP_*, BUSINESS_*
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose exec backend python manage.py createsuperuser
+```
+
+Puis, dans `https://<domaine>/admin/` : comptes de l'équipe, horaires d'ouverture, catalogue. Ne **pas** lancer
+`seed_demo` en production.
+
+- Mise à jour : `git pull` puis la même commande `up -d --build` (les migrations s'appliquent au démarrage).
+- Sauvegardes : `docker compose cp backup:/backups ./sauvegardes`, à copier **hors du serveur** régulièrement.
+- Pare-feu : n'ouvrir que 22 (SSH par clé, mot de passe désactivé), 80 et 443.
+
+Coûts indicatifs : serveur ≈ 6 à 12 €/mois, domaine `.com` ≈ 10–15 €/an ou `.sn` ≈ 15 000–25 000 FCFA/an,
+SMTP gratuit jusqu'à 300 emails/jour (Brevo). Détails et liste de contrôle dans le guide (chapitre 15).
+
 ## Règles du projet
 
 - **Aucune donnée fictive hors de `frontend/src/mocks/` et `backend/apps/demo/`.** En mode réel, un contenu non
@@ -102,7 +128,7 @@ verrous de ligne, n'existent que sur PostgreSQL.
 | 4 — Contenu & analyse | Galerie, avis, chiffres clés, statistiques, CSV, notifications | Fait | Fait |
 | 5 — Évolutions | Paiement en ligne, WhatsApp/SMS, mobile | À faire | À faire |
 
-Reste aussi : mise en ligne (serveur, domaine, HTTPS, SMTP, sauvegardes), routage par URL (SEO),
-stockage objet des médias (S3/R2), tests frontend.
+Configuration de mise en ligne prête (voir ci-dessus) ; reste à louer le serveur et le domaine.
+Reste aussi : routage par URL (SEO), stockage objet des médias (S3/R2), tests frontend.
 
 Documentation fonctionnelle (rôles, parcours, modules) : [Word](docs/guide-fonctionnement.docx) · [PDF](docs/guide-fonctionnement.pdf)

@@ -175,6 +175,8 @@ CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    # HSTS : le navigateur n'utilise plus que HTTPS pour ce domaine (0 = désactivé, usage local)
+    SECURE_HSTS_SECONDS = int(env("DJANGO_HSTS_SECONDS", "0"))
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

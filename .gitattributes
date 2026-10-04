@@ -1,0 +1,6 @@
+# Fichiers exécutés dans les conteneurs Linux : fins de ligne LF obligatoires
+*.sh        text eol=lf
+Caddyfile   text eol=lf
+Dockerfile  text eol=lf
+*.conf      text eol=lf
+*.yml       text eol=lf
