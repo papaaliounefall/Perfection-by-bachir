@@ -774,6 +774,20 @@ export const mockApi: ApiClient = {
     send: () => delay(undefined),
   },
 
+  // Démo : gestion des contenus non simulée (le site public affiche le contenu fictif)
+  gallery: {
+    projects: () => delay([]),
+    createProject: () => fail('Gestion de la galerie indisponible en mode démo.', 400),
+    updateProject: () => fail('Gestion de la galerie indisponible en mode démo.', 400),
+    deleteProject: () => fail('Gestion de la galerie indisponible en mode démo.', 400),
+    testimonials: () => delay([]),
+    saveTestimonial: () => fail('Gestion des avis indisponible en mode démo.', 400),
+    deleteTestimonial: () => fail('Gestion des avis indisponible en mode démo.', 400),
+    highlights: () => delay([]),
+    saveHighlight: () => fail('Gestion des chiffres clés indisponible en mode démo.', 400),
+    deleteHighlight: () => fail('Gestion des chiffres clés indisponible en mode démo.', 400),
+  },
+
   content: {
     portfolio: () =>
       delay(

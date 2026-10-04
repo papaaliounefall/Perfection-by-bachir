@@ -363,6 +363,43 @@ export interface AnalyticsSummary {
   vehiclesTreated: number;
 }
 
+// --- Gestion des contenus publics (manager) ---
+
+export interface ManagedProject {
+  id: number;
+  title: string;
+  vehicleLabel: string;
+  category: ServiceCategory;
+  description: string;
+  servicesPerformed: string;
+  durationLabel: string;
+  completedOn: string | null;
+  beforeUrl: string;
+  afterUrl: string;
+  isPublished: boolean;
+  featured: boolean;
+}
+
+export type ProjectInput = Omit<ManagedProject, 'id' | 'beforeUrl' | 'afterUrl'>;
+
+export interface ManagedTestimonial {
+  id: number;
+  author: string;
+  role: string;
+  vehicleLabel: string;
+  quote: string;
+  consentObtained: boolean;
+  isPublished: boolean;
+}
+
+export interface ManagedHighlight {
+  id: number;
+  value: string;
+  label: string;
+  isPublished: boolean;
+  sortOrder: number;
+}
+
 export interface ContactInput {
   fullName: string;
   email: string;

@@ -14,6 +14,10 @@ import {
   ContactInput,
   CurrentUser,
   Invoice,
+  ManagedHighlight,
+  ManagedProject,
+  ManagedTestimonial,
+  ProjectInput,
   InvoiceLineInput,
   Customer,
   CustomerProfile,
@@ -126,6 +130,19 @@ export interface ApiClient {
   };
   /** Contenu éditorial publié par l'atelier (galerie, avis, chiffres clés).
    *  Seuls les contenus validés et publiés sont renvoyés. */
+  /** Gestion des contenus publics (manager) : rien n'apparaît sur le site sans publication. */
+  gallery: {
+    projects(): Promise<ManagedProject[]>;
+    createProject(input: ProjectInput, before: File, after: File): Promise<ManagedProject>;
+    updateProject(id: number, patch: Partial<ProjectInput>): Promise<ManagedProject>;
+    deleteProject(id: number): Promise<void>;
+    testimonials(): Promise<ManagedTestimonial[]>;
+    saveTestimonial(input: Omit<ManagedTestimonial, 'id'>, id?: number): Promise<ManagedTestimonial>;
+    deleteTestimonial(id: number): Promise<void>;
+    highlights(): Promise<ManagedHighlight[]>;
+    saveHighlight(input: Omit<ManagedHighlight, 'id'>, id?: number): Promise<ManagedHighlight>;
+    deleteHighlight(id: number): Promise<void>;
+  };
   content: {
     portfolio(): Promise<PortfolioProject[]>;
     testimonials(): Promise<Testimonial[]>;

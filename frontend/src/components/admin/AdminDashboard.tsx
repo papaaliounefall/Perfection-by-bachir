@@ -25,6 +25,7 @@ import { MenuButton, ResponsiveSidebar } from '../ui/ResponsiveSidebar';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { GalleryPage } from './pages/GalleryPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { StatisticsPage } from './pages/StatisticsPage';
@@ -199,14 +200,7 @@ export const AdminDashboard: React.FC = () => {
           {adminPage === 'team' && <TeamPage />}
           {adminPage === 'payments' && <PaymentsPage />}
           {adminPage === 'invoices' && <InvoicesPage />}
-          {adminPage === 'gallery' && (
-            <ComingSoon
-              tone="light"
-              title="Galerie Avant / Après"
-              phase="Phase 4 — Contenu"
-              description="Publication et dépublication des réalisations, synchronisées avec la page publique « Réalisations »."
-            />
-          )}
+          {adminPage === 'gallery' && <GalleryPage />}
           {adminPage === 'statistics' && <StatisticsPage />}
           {adminPage === 'notifications' && (
             <>

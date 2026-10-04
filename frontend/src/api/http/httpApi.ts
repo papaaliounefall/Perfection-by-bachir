@@ -1,4 +1,5 @@
 import { formatDate } from '../../lib/labels';
+import { ProjectInput } from '../../types';
 import { ApiClient, ApiError } from '../client';
 import {
   fromService,
@@ -46,6 +47,48 @@ const toInvoice = (d: Dto) => ({
   cancelReason: d.cancel_reason,
   pdfUrl: `/api/v1/invoices/${d.id}/pdf/`,
 });
+
+const toManagedProject = (p: Dto) => ({
+  id: p.id,
+  title: p.title,
+  vehicleLabel: p.vehicle_label,
+  category: p.category,
+  description: p.description,
+  servicesPerformed: p.services_performed,
+  durationLabel: p.duration_label,
+  completedOn: p.completed_on,
+  beforeUrl: p.before_url,
+  afterUrl: p.after_url,
+  isPublished: p.is_published,
+  featured: p.featured,
+});
+
+const fromProject = (p: Partial<ProjectInput>): Dto => {
+  const map: Record<string, string> = {
+    title: 'title',
+    vehicleLabel: 'vehicle_label',
+    category: 'category',
+    description: 'description',
+    servicesPerformed: 'services_performed',
+    durationLabel: 'duration_label',
+    completedOn: 'completed_on',
+    isPublished: 'is_published',
+    featured: 'featured',
+  };
+  return Object.fromEntries(Object.entries(p).filter(([k, v]) => k in map && v !== undefined).map(([k, v]) => [map[k], v === '' && k === 'completedOn' ? null : v]));
+};
+
+const toManagedTestimonial = (t: Dto) => ({
+  id: t.id,
+  author: t.author,
+  role: t.role,
+  vehicleLabel: t.vehicle_label,
+  quote: t.quote,
+  consentObtained: t.consent_obtained ?? false,
+  isPublished: t.is_published,
+});
+
+const toManagedHighlight = (h: Dto) => ({ id: h.id, value: h.value, label: h.label, isPublished: h.is_published, sortOrder: h.sort_order });
 
 const toPhoto = (p: Dto) => ({
   id: p.id,
@@ -329,6 +372,48 @@ export const httpApi: ApiClient = {
         phone: input.phone,
         message: input.message,
       }),
+  },
+
+  gallery: {
+    projects: async () => (await request<Dto[]>('GET', '/gallery/projects/')).map(toManagedProject),
+    createProject: async (input, before, after) => {
+      const form = new FormData();
+      Object.entries(fromProject(input)).forEach(([k, v]) => v !== null && v !== undefined && form.append(k, String(v)));
+      form.append('before_image', before);
+      form.append('after_image', after);
+      return toManagedProject(await upload<Dto>('/gallery/projects/', form));
+    },
+    updateProject: async (id, patch) => toManagedProject(await request<Dto>('PATCH', `/gallery/projects/${id}/`, fromProject(patch))),
+    deleteProject: async (id) => {
+      await request('DELETE', `/gallery/projects/${id}/`);
+    },
+    testimonials: async () => (await request<Dto[]>('GET', '/content/testimonials/')).map(toManagedTestimonial),
+    saveTestimonial: async (t, id) => {
+      const body = {
+        author: t.author,
+        role: t.role,
+        vehicle_label: t.vehicleLabel,
+        quote: t.quote,
+        consent_obtained: t.consentObtained,
+        is_published: t.isPublished,
+      };
+      return toManagedTestimonial(
+        await request<Dto>(id ? 'PATCH' : 'POST', id ? `/content/testimonials/${id}/` : '/content/testimonials/', body)
+      );
+    },
+    deleteTestimonial: async (id) => {
+      await request('DELETE', `/content/testimonials/${id}/`);
+    },
+    highlights: async () => (await request<Dto[]>('GET', '/content/highlights/')).map(toManagedHighlight),
+    saveHighlight: async (h, id) => {
+      const body = { value: h.value, label: h.label, is_published: h.isPublished, sort_order: h.sortOrder };
+      return toManagedHighlight(
+        await request<Dto>(id ? 'PATCH' : 'POST', id ? `/content/highlights/${id}/` : '/content/highlights/', body)
+      );
+    },
+    deleteHighlight: async (id) => {
+      await request('DELETE', `/content/highlights/${id}/`);
+    },
   },
 
   content: {

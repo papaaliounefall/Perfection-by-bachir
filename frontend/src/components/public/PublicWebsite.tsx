@@ -495,14 +495,14 @@ export const PublicWebsite: React.FC = () => {
                   </div>
                   <div className="lg:col-span-4 bg-[#14171D] border border-white/10 rounded-xl p-6 space-y-5">
                     <div className="text-xs text-neutral-400 font-mono">
-                      Projet vedette · {portfolio[0].completionDate}
+                      Projet vedette{portfolio[0].completionDate && ` · ${portfolio[0].completionDate}`}
                       <DemoTag />
                     </div>
                     <h3 className="text-2xl font-bold text-white font-display">
                       {portfolio[0].title}
                     </h3>
                     <p className="text-xs text-[#D49A3D]">
-                      {portfolio[0].servicesPerformed.join(' · ')} · Durée : {portfolio[0].duration}
+                      {[...portfolio[0].servicesPerformed, portfolio[0].duration && `Durée : ${portfolio[0].duration}`].filter(Boolean).join(' · ')}
                     </p>
                     <p className="text-sm text-neutral-300 leading-relaxed">
                       {portfolio[0].description}
@@ -943,7 +943,7 @@ export const PublicWebsite: React.FC = () => {
                 </div>
                 <div className="lg:col-span-5 space-y-4">
                   <div className="text-xs text-neutral-400 font-mono">
-                    {featuredProject.completionDate} · Durée : {featuredProject.duration}
+                    {[featuredProject.completionDate, featuredProject.duration && `Durée : ${featuredProject.duration}`].filter(Boolean).join(' · ')}
                     <DemoTag />
                   </div>
                   <h2 className="text-2xl font-bold text-white font-display">
