@@ -348,6 +348,21 @@ export interface InvoiceLineInput {
   unitPrice: number;
 }
 
+export type StatsGroup = 'day' | 'week' | 'month';
+
+export interface AnalyticsSummary {
+  from: string;
+  to: string;
+  revenue: number;
+  revenueSeries: { period: string; amount: number }[];
+  revenueByMethod: { method: string; amount: number; count: number }[];
+  appointments: { total: number; byStatus: Record<string, number>; cancellations: number; cancellationRate: number };
+  popularServices: { service: string; count: number }[];
+  newCustomers: number;
+  returningCustomers: number;
+  vehiclesTreated: number;
+}
+
 export interface ContactInput {
   fullName: string;
   email: string;

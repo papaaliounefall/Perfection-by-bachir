@@ -1,10 +1,12 @@
 import {
+  AnalyticsSummary,
   AppNotification,
   Appointment,
   AppointmentPhoto,
   CashReport,
   PaymentMethod,
   PhotoKind,
+  StatsGroup,
   AppointmentAction,
   AppointmentFilters,
   AvailableDay,
@@ -112,6 +114,12 @@ export interface ApiClient {
   };
   dashboard: {
     summary(): Promise<DashboardSummary>;
+  };
+  analytics: {
+    /** Statistiques de la période (manager). Chiffre d'affaires = paiements encaissés, remboursements exclus. */
+    summary(from: string, to: string, group: StatsGroup): Promise<AnalyticsSummary>;
+    /** Lien de téléchargement CSV (ouvre directement dans Excel). */
+    exportUrl(type: 'appointments' | 'payments', from: string, to: string): string;
   };
   contact: {
     send(input: ContactInput): Promise<void>;

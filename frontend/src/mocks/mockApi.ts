@@ -734,6 +734,42 @@ export const mockApi: ApiClient = {
     },
   },
 
+  analytics: {
+    // Démo : pas de facturation simulée, donc chiffre d'affaires nul ; rendez-vous issus des données fictives
+    async summary(from, to) {
+      requireManager();
+      const inRange = rows.filter((r) => dayOf(r.start) >= from && dayOf(r.start) <= to);
+      const byStatus: Record<string, number> = {};
+      inRange.forEach((r) => (byStatus[STATUS_LABELS[r.status]] = (byStatus[STATUS_LABELS[r.status]] ?? 0) + 1));
+      const counts = new Map<string, number>();
+      inRange
+        .filter((r) => !NON_BLOCKING.includes(r.status))
+        .forEach((r) => {
+          const name = services.find((s) => s.id === r.serviceId)!.name;
+          counts.set(name, (counts.get(name) ?? 0) + 1);
+        });
+      const cancellations = inRange.filter((r) => NON_BLOCKING.includes(r.status)).length;
+      return delay({
+        from,
+        to,
+        revenue: 0,
+        revenueSeries: [],
+        revenueByMethod: [],
+        appointments: {
+          total: inRange.length,
+          byStatus,
+          cancellations,
+          cancellationRate: inRange.length ? Math.round((cancellations * 1000) / inRange.length) / 10 : 0,
+        },
+        popularServices: [...counts].map(([service, count]) => ({ service, count })).sort((a, b) => b.count - a.count).slice(0, 5),
+        newCustomers: customers.filter((c) => c.createdAt.slice(0, 10) >= from && c.createdAt.slice(0, 10) <= to).length,
+        returningCustomers: 0,
+        vehiclesTreated: new Set(inRange.filter((r) => ['done', 'delivered'].includes(r.status)).map((r) => r.vehicleId)).size,
+      });
+    },
+    exportUrl: () => '#export-indisponible-en-demo',
+  },
+
   contact: {
     send: () => delay(undefined),
   },

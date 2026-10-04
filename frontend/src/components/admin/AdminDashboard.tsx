@@ -27,6 +27,7 @@ import { CustomersPage } from './pages/CustomersPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { PaymentsPage } from './pages/PaymentsPage';
+import { StatisticsPage } from './pages/StatisticsPage';
 import { ServicesPage } from './pages/ServicesPage';
 import { TeamPage } from './pages/TeamPage';
 import { VehiclesPage } from './pages/VehiclesPage';
@@ -206,14 +207,7 @@ export const AdminDashboard: React.FC = () => {
               description="Publication et dépublication des réalisations, synchronisées avec la page publique « Réalisations »."
             />
           )}
-          {adminPage === 'statistics' && (
-            <ComingSoon
-              tone="light"
-              title="Statistiques"
-              phase="Phase 4 — Analyse"
-              description="Chiffre d’affaires, rendez-vous, annulations, services populaires, clients récurrents et exports CSV, calculés à partir des données réelles."
-            />
-          )}
+          {adminPage === 'statistics' && <StatisticsPage />}
           {adminPage === 'notifications' && (
             <>
               <h1 className="text-2xl font-bold font-display mb-1">Notifications</h1>

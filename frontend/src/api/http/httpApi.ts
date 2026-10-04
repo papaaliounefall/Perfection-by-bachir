@@ -297,6 +297,30 @@ export const httpApi: ApiClient = {
     summary: async () => toSummary(await request<Dto>('GET', '/dashboard/summary/')),
   },
 
+  analytics: {
+    summary: async (from, to, group) => {
+      const d = await request<Dto>('GET', `/analytics/summary/${query({ from, to, group })}`);
+      return {
+        from: d.from,
+        to: d.to,
+        revenue: d.revenue,
+        revenueSeries: d.revenue_series,
+        revenueByMethod: d.revenue_by_method,
+        appointments: {
+          total: d.appointments.total,
+          byStatus: d.appointments.by_status,
+          cancellations: d.appointments.cancellations,
+          cancellationRate: d.appointments.cancellation_rate,
+        },
+        popularServices: d.popular_services,
+        newCustomers: d.new_customers,
+        returningCustomers: d.returning_customers,
+        vehiclesTreated: d.vehicles_treated,
+      };
+    },
+    exportUrl: (type, from, to) => `/api/v1/analytics/export/${query({ type, from, to })}`,
+  },
+
   contact: {
     send: (input) =>
       request('POST', '/contact/', {
